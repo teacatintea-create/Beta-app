@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Доска практики</string>
+    <string name="widget_name">Доска заданий</string>
+    <string name="widget_description">Задания на день по программированию, 3D и 2D-арту</string>
+</resources>
