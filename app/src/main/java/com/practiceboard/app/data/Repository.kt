@@ -76,7 +76,10 @@ class Repository private constructor(private val context: Context) {
         val fresh = createBoard(date, old.salt + 1)
         val kept = old.items.filter { it.done }
         val keptIds = kept.map { it.task.id }.toSet()
-        val replacement = fresh.items.filter { it.task.id !in keptIds }.take((old.items.size - kept.size).coerceAtLeast(0))
+        val oldIds = old.items.map { it.task.id }.toSet()
+        // Сначала задания, которых на доске ещё не было.
+        val candidates = fresh.items.filter { it.task.id !in oldIds } + fresh.items.filter { it.task.id in oldIds && it.task.id !in keptIds }
+        val replacement = candidates.take((old.items.size - kept.size).coerceAtLeast(0))
         saveBoard(fresh.copy(items = kept + replacement))
         notifyChanged()
     }
