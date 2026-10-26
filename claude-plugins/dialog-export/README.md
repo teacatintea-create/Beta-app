@@ -2,6 +2,46 @@
 
 Плагин Claude Code: команда `/export-dialog` сохраняет диалог в файлы, которые открываются без Claude и без интернета.
 
+## Сразу в Obsidian
+
+Если хранилище Obsidian найдено, `/export-dialog` пишет Markdown-заметку прямо в
+него, в папку `Claude`, и печатает ссылку `obsidian://open?...`, которая
+открывает заметку. Отдельный файл переносить не нужно.
+
+```
+/export-dialog --vault ~/Documents/MyVault   # запомнить хранилище и экспортировать
+/export-dialog --vault ~/MyVault --folder Чаты
+/export-dialog                               # дальше просто так: заметка .md в хранилище
+/export-dialog md pdf                        # заметка и PDF рядом с ней
+/export-dialog obsidian                      # только в хранилище, ошибка, если его нет
+/export-dialog --here                        # как раньше: html в ./claude-exports/
+```
+
+Хранилище ищется в таком порядке:
+1. `--vault`;
+2. переменная `OBSIDIAN_VAULT_PATH`;
+3. настройки `~/.claude/obsidian-export/config.json` (общие с плагином
+   `obsidian-export`, поэтому `--vault` достаточно указать один раз);
+4. хранилище, открытое в приложении Obsidian на этом компьютере.
+
+Если хранилище не найдено, экспорт идёт по-старому в `./claude-exports/` и
+сообщает об этом.
+
+Заметка для Obsidian:
+- в начале YAML-свойства: `title`, `session_id`, `project`, `model`, `created`,
+  `exported` и теги `claude`, `claude/project/<проект>`;
+- вызовы инструментов, файлы и размышления оформлены свёрнутыми callout-блоками
+  вместо `<details>`, потому что внутри `<details>` Obsidian не показывает код и
+  формулы;
+- время местное;
+- имя файла `2026-10-26 Название диалога.md`. Повторный экспорт той же сессии
+  перезаписывает ту же заметку, даже если её переименовали или перенесли
+  внутри хранилища.
+
+Если установлен ещё и плагин `obsidian-export`, он сохраняет каждую сессию сам.
+Тогда `/export-dialog` нужен для HTML и PDF или для разовой заметки: у двух
+плагинов разные файлы.
+
 ## Форматы
 
 | Формат | Что получится |
@@ -15,7 +55,7 @@
 ## Примеры
 
 ```
-/export-dialog                       # HTML в ./claude-exports/
+/export-dialog                       # заметка в Obsidian; без хранилища — HTML в ./claude-exports/
 /export-dialog md pdf --out ~/Docs   # Markdown и PDF в ~/Docs
 /export-dialog html --out chat.html  # в конкретный файл
 /export-dialog --no-tools            # без вызовов инструментов
@@ -32,3 +72,9 @@
 Источник — файл истории сессии (`~/.claude/projects/<проект>/<id>.jsonl`), поэтому в экспорт попадает вся переписка, даже после сжатия контекста, с датой и временем каждого сообщения. Если файл прочитать не удалось, экспортируется текущий контекст сессии, о чём файл предупреждает в начале. Служебные вставки (system-reminder, тексты скиллов) в экспорт не попадают.
 
 Встроенные библиотеки: KaTeX 0.16.11, marked 12.0.2, highlight.js 11.9.0 (лицензии в `assets/THIRD_PARTY_LICENSES.txt`).
+
+## Установка
+
+```
+/plugin install dialog-export --marketplace teacatintea-create/Beta-app
+```

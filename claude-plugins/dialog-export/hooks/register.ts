@@ -16,13 +16,20 @@ type Options = ReadOptions & {
   session?: string
   all: boolean
   list: boolean
+  /** true: into the Obsidian vault (an error when none is found); false: never; undefined: when one is found. */
+  obsidian?: boolean
+  vault?: string
+  folder?: string
 }
 
 const HELP = `/${COMMAND} [html|md|json|pdf|all] [--out <папка или файл>] [--no-tools] [--thinking]
 /${COMMAND} --list                 — сессии этого проекта
 /${COMMAND} --session <id> [...]   — экспорт другой сессии (можно начало id)
 /${COMMAND} --all [...]            — экспорт всех сессий проекта
-По умолчанию: html в ./claude-exports/`
+/${COMMAND} --vault <путь> [--folder <папка>] — запомнить хранилище Obsidian
+/${COMMAND} obsidian | --here      — только в Obsidian / только в ./claude-exports/
+Если хранилище Obsidian найдено, Markdown-заметка сразу пишется в него
+(папка Claude); иначе — html в ./claude-exports/`
 
 function parseArgs(args: string): Options | { error: string } {
   const words = args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(w => w.replace(/^(["'])(.*)\1$/, '$2')) ?? []
@@ -39,11 +46,15 @@ function parseArgs(args: string): Options | { error: string } {
     else if (w === '--list') o.list = true
     else if (w === '--session' || w === '-s') o.session = words[++i]
     else if (w === '--out' || w === '-o') o.out = words[++i]
+    else if (lw === 'obsidian' || lw === 'обсидиан' || w === '--obsidian') o.obsidian = true
+    else if (w === '--here' || w === '--no-obsidian') o.obsidian = false
+    else if (w === '--vault') o.vault = words[++i]
+    else if (w === '--folder') o.folder = words[++i]
     else if (w === '--help' || w === '-h' || w === 'help') return { error: HELP }
     else if (!w.startsWith('-') && /[\\/.]/.test(w)) o.out = w
     else return { error: `Не понял «${w}».\n\n${HELP}` }
   }
-  if (o.formats.length === 0) o.formats = ['html']
+  if (o.out && o.obsidian === undefined) o.obsidian = false
   return o
 }
 
@@ -76,6 +87,109 @@ async function locate($: EngineInterface): Promise<{ dir?: string; file?: string
     if (await $.fs.exists(file)) return { dir: join(projects, d.name), file, id }
   }
   return { dir: (await $.fs.exists(guess)) ? guess : undefined, id }
+}
+
+// ---------- Obsidian ----------
+
+type Vault = { path: string; folder: string; from: 'аргумент' | 'настройки' | 'Obsidian' }
+
+const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+
+async function home($: EngineInterface) {
+  return (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))
+}
+
+async function expand($: EngineInterface, p: string) {
+  const h = await home($)
+  return h ? p.replace(/^~(?=[\\/]|$)/, h) : p
+}
+
+async function readJson($: EngineInterface, path: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    const v: unknown = JSON.parse(await $.fs.read(path))
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const isDir = ($: EngineInterface, p: string) => $.fs.stat(p).then(s => s.kind === 'dir', () => false)
+
+/** Shared with the obsidian-export plugin, so one setting serves both. */
+async function sharedConfig($: EngineInterface) {
+  const config = await configDir($)
+  return config ? join(join(config, 'obsidian-export'), 'config.json') : undefined
+}
+
+/** Vaults the Obsidian app knows, the open one first, then the most recently used. */
+async function appVaults($: EngineInterface): Promise<string[]> {
+  const h = await home($)
+  const appData = await $.env.get('APPDATA')
+  const xdg = (await $.env.get('XDG_CONFIG_HOME')) ?? (h ? join(h, '.config') : undefined)
+  const files = [
+    appData && join(join(appData, 'obsidian'), 'obsidian.json'),
+    h && join(h, 'Library/Application Support/obsidian/obsidian.json'),
+    xdg && join(xdg, 'obsidian/obsidian.json'),
+    h && join(h, '.var/app/md.obsidian.Obsidian/config/obsidian/obsidian.json'),
+    h && join(h, 'snap/obsidian/current/.config/obsidian/obsidian.json'),
+  ].filter((f): f is string => Boolean(f))
+  const found: { path: string; open: boolean; ts: number }[] = []
+  for (const f of files) {
+    const vaults = (await readJson($, f))?.vaults
+    if (!vaults || typeof vaults !== 'object') continue
+    for (const v of Object.values(vaults as Record<string, { path?: unknown; open?: unknown; ts?: unknown }>)) {
+      const path = str(v?.path)
+      if (path) found.push({ path, open: v.open === true, ts: typeof v.ts === 'number' ? v.ts : 0 })
+    }
+  }
+  return found.sort((a, b) => Number(b.open) - Number(a.open) || b.ts - a.ts).map(v => v.path)
+}
+
+/** The vault to export into, or why there is none. `--vault` is remembered in the shared settings. */
+async function findVault($: EngineInterface, o: Options): Promise<Vault | { error: string }> {
+  const file = await sharedConfig($)
+  const shared = (file && (await readJson($, file))) || {}
+  const folder = (o.folder ?? str(await $.env.get('OBSIDIAN_EXPORT_FOLDER')) ?? str(shared.folder) ?? 'Claude').replace(/^[\\/]+|[\\/]+$/g, '')
+  if (o.vault) {
+    const path = await expand($, o.vault)
+    if (!(await isDir($, path))) return { error: `Папки хранилища нет: ${path}` }
+    if (file) await $.fs.write(file, `${JSON.stringify({ ...shared, vault_path: path, folder }, null, 2)}\n`)
+    return { path, folder, from: 'аргумент' }
+  }
+  const set = str(await $.env.get('OBSIDIAN_VAULT_PATH')) ?? str(shared.vault_path)
+  if (set) {
+    const path = await expand($, set)
+    return (await isDir($, path)) ? { path, folder, from: 'настройки' } : { error: `Папки хранилища из настроек нет: ${path}` }
+  }
+  for (const path of await appVaults($)) if (await isDir($, path)) return { path, folder, from: 'Obsidian' }
+  return { error: `Хранилище Obsidian не найдено. Укажите его: /${COMMAND} --vault <путь к хранилищу>` }
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const fileSafe = (s: string) => s.replace(/[\\/:*?"<>|#^[\]\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/[.… ]+$/, '').slice(0, 90).trim()
+
+/** The note's path without extension: the one this session was exported to before, else "<date> <title>". */
+async function vaultStem($: EngineInterface, v: Vault, d: Dialog): Promise<string> {
+  const key = d.sessionId ? `vault-note:${d.sessionId}` : undefined
+  const saved = key ? await $.store.get(key) : undefined
+  // Kept where it was, even if moved within the vault; a note in another vault is not reused.
+  if (typeof saved === 'string' && saved.startsWith(v.path) && (await $.fs.exists(`${saved}.md`))) return saved
+  const t = new Date(d.startedAt ?? d.exportedAt)
+  const dir = v.folder ? join(v.path, v.folder) : v.path
+  const name = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())} ${fileSafe(d.title) || 'Диалог'}`
+  let stem = join(dir, name)
+  if (await $.fs.exists(`${stem}.md`)) {
+    const mine = d.sessionId && (await $.fs.read(`${stem}.md`).then(t => t.includes(`session_id: ${JSON.stringify(d.sessionId)}`), () => false))
+    if (!mine) stem = join(dir, `${name} (${d.sessionId?.slice(0, 8) ?? Date.now()})`)
+  }
+  if (key) await $.store.set(key, stem)
+  return stem
+}
+
+function obsidianUri(v: Vault, file: string): string {
+  const rel = file.slice(v.path.length).replace(/^[\\/]+/, '').replace(/\\/g, '/').replace(/\.md$/, '')
+  const vaultName = v.path.split(/[\\/]/).filter(Boolean).pop() ?? ''
+  return `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(rel)}`
 }
 
 const B64 = new Uint8Array(128)
@@ -161,7 +275,6 @@ async function assets($: EngineInterface): Promise<Assets> {
   return assetsCache
 }
 
-const pad = (n: number) => String(n).padStart(2, '0')
 function baseName(d: Dialog): string {
   const t = new Date(d.startedAt ?? d.exportedAt)
   const date = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}_${pad(t.getHours())}-${pad(t.getMinutes())}`
@@ -203,7 +316,7 @@ async function printPdf($: EngineInterface, html: string, pdf: string): Promise<
   return undefined
 }
 
-async function writeDialog($: EngineInterface, d: Dialog, o: Options, target: { dir: string; file?: string }) {
+async function writeDialog($: EngineInterface, d: Dialog, o: Options, target: { dir: string; file?: string; obsidian?: boolean }) {
   const written: string[] = []
   const problems: string[] = []
   const stem = target.file ? target.file.replace(/\.(html?|md|json|pdf)$/i, '') : join(target.dir, baseName(d))
@@ -217,7 +330,7 @@ async function writeDialog($: EngineInterface, d: Dialog, o: Options, target: { 
   for (const f of o.formats) {
     if (f === 'html') written.push(await html())
     else if (f === 'md') {
-      await $.fs.write(`${stem}.md`, toMarkdown(d))
+      await $.fs.write(`${stem}.md`, toMarkdown(d, { obsidian: target.obsidian }))
       written.push(`${stem}.md`)
     } else if (f === 'json') {
       await $.fs.write(`${stem}.json`, JSON.stringify(d, null, 2))
@@ -259,6 +372,17 @@ async function run($: EngineInterface, args: string): Promise<string> {
   const o = parsed
   const where = await locate($)
 
+  let vault: Vault | undefined
+  let vaultNote = ''
+  if (o.obsidian !== false) {
+    const found = await findVault($, o)
+    if ('error' in found) {
+      if (o.obsidian || o.vault) return found.error
+      vaultNote = `ℹ Obsidian: ${found.error.replace(/\.$/, '')} — сохраняю в папку проекта.`
+    } else vault = found
+  }
+  if (o.formats.length === 0) o.formats = vault ? ['md'] : ['html']
+
   if (o.list) {
     if (!where.dir) return 'Не нашёл папку с историей сессий этого проекта.'
     const files = (await sessionFiles($, where.dir)).slice(0, 30)
@@ -283,7 +407,7 @@ async function run($: EngineInterface, args: string): Promise<string> {
     jobs.push(...picked.map(f => ({ file: join(where.dir ?? '', f.name) })))
   } else jobs.push({ file: where.file })
 
-  const target = await outTarget($, o, jobs.length > 1)
+  const target = vault ? undefined : await outTarget($, o, jobs.length > 1)
   const lines: string[] = []
   for (const job of jobs) {
     const isCurrent = job.file === where.file
@@ -297,28 +421,40 @@ async function run($: EngineInterface, args: string): Promise<string> {
       continue
     }
     if (d.messages.length === 0) continue
-    const { written, problems } = await writeDialog($, d, o, target)
+    const stem = vault ? await vaultStem($, vault, d) : undefined
+    const to = vault && stem ? { dir: vault.path, file: `${stem}.md`, obsidian: true } : target ?? { dir: '.' }
+    const { written, problems } = await writeDialog($, d, o, to)
     lines.push(`✓ «${d.title}» — ${stats(d)}`, ...written.map(w => `   ${w}`), ...problems.map(p => `   ⚠ ${p}`))
+    if (vault && stem && written.some(w => w.endsWith('.md'))) lines.push(`   Открыть: ${obsidianUri(vault, `${stem}.md`)}`)
   }
-  return lines.length ? `Экспорт диалога:\n${lines.join('\n')}` : 'Нечего экспортировать: в диалоге пока нет сообщений.'
+  const head = vault ? `Экспорт в Obsidian (${vault.path}, хранилище: ${vault.from}):` : 'Экспорт диалога:'
+  const body = lines.length ? `${head}\n${lines.join('\n')}` : 'Нечего экспортировать: в диалоге пока нет сообщений.'
+  return vaultNote ? `${body}\n${vaultNote}` : body
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'export-dialog',
-      description: 'Экспорт диалога в HTML / Markdown / JSON / PDF с формулами, картинками и файлами',
-      argumentHint: '[html|md|json|pdf|all] [--out путь] [--no-tools] [--thinking] [--list|--session id|--all]',
+      description: 'Экспорт диалога в Obsidian или в HTML / Markdown / JSON / PDF с формулами, картинками и файлами',
+      argumentHint: '[html|md|json|pdf|all] [obsidian|--here] [--vault путь] [--out путь] [--no-tools] [--thinking] [--list|--session id|--all]',
     })
     await $.tool.register({
       name: 'export_dialog',
       description:
-        'Exports this conversation to files the user can open: a self-contained HTML page (KaTeX formulas, images, attached files, code, tool calls; works offline), Markdown, JSON or PDF. Use when the user asks to save, export or download the chat/dialog. Returns the written paths.',
+        'Exports this conversation to files the user can open: a self-contained HTML page (KaTeX formulas, images, attached files, code, tool calls; works offline), Markdown, JSON or PDF. When an Obsidian vault is configured or found, the export is written straight into it as a Markdown note (default format md) and an obsidian:// link is returned. Use when the user asks to save, export or download the chat/dialog, or to put it into Obsidian. Returns the written paths.',
       inputSchema: {
         type: 'object',
         properties: {
           formats: { type: 'array', items: { type: 'string', enum: [...FORMATS] }, description: 'Default ["html"].' },
-          out: { type: 'string', description: 'Folder or file path; default ./claude-exports/' },
+          out: { type: 'string', description: 'Folder or file path. Given, the export goes there instead of the Obsidian vault.' },
+          obsidian: {
+            type: 'boolean',
+            description:
+              'true: export into the Obsidian vault (fails when none is found); false: into ./claude-exports/. Omitted: into the vault when one is configured or found, else ./claude-exports/.',
+          },
+          vault: { type: 'string', description: 'Obsidian vault path to use and remember for later exports.' },
+          folder: { type: 'string', description: 'Folder inside the vault (default "Claude"), remembered with vault.' },
           tools: { type: 'boolean', description: 'Include tool calls and their results (default true).' },
           thinking: { type: 'boolean', description: 'Include thinking blocks (default false).' },
         },
@@ -332,10 +468,15 @@ export const register: Register = on => {
   }))
 
   on('tool.call', { tool: 'mcp__dialog-export__export_dialog' }, async ($, e) => {
-    const input = e as unknown as { formats?: string[]; out?: string; tools?: boolean; thinking?: boolean }
+    const input = e as unknown as {
+      formats?: string[]; out?: string; tools?: boolean; thinking?: boolean; obsidian?: boolean; vault?: string; folder?: string
+    }
     const args = [
       ...(input.formats ?? []),
       ...(input.out ? ['--out', `"${input.out}"`] : []),
+      ...(input.obsidian === true ? ['--obsidian'] : input.obsidian === false ? ['--here'] : []),
+      ...(input.vault ? ['--vault', `"${input.vault}"`] : []),
+      ...(input.folder ? ['--folder', `"${input.folder}"`] : []),
       ...(input.tools === false ? ['--no-tools'] : []),
       ...(input.thinking ? ['--thinking'] : []),
     ].join(' ')

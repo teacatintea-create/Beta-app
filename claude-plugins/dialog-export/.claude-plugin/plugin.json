@@ -1,5 +1,8 @@
 {
   "name": "dialog-export",
-  "version": "0.1.0",
-  "description": "/export-dialog: экспорт диалога в HTML, Markdown, JSON или PDF с формулами (KaTeX), картинками, файлами и кодом"
+  "version": "0.2.0",
+  "description": "/export-dialog: экспорт диалога прямо в хранилище Obsidian или в HTML, Markdown, JSON, PDF с формулами (KaTeX), картинками, файлами и кодом",
+  "author": {
+    "name": "teacatintea-create"
+  }
 }

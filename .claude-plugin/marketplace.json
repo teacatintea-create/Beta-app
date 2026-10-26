@@ -13,7 +13,25 @@
       "description": "Автоматический экспорт диалогов Claude в Obsidian (Markdown)",
       "version": "1.0.0",
       "category": "productivity",
-      "keywords": ["obsidian", "markdown", "export"]
+      "keywords": [
+        "obsidian",
+        "markdown",
+        "export"
+      ]
+    },
+    {
+      "name": "dialog-export",
+      "source": "./claude-plugins/dialog-export",
+      "description": "/export-dialog: экспорт диалога в Obsidian, HTML, Markdown, JSON или PDF",
+      "version": "0.2.0",
+      "category": "productivity",
+      "keywords": [
+        "obsidian",
+        "export",
+        "pdf",
+        "html",
+        "markdown"
+      ]
     }
   ]
 }
