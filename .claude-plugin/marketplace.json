@@ -1,0 +1,19 @@
+{
+  "name": "teacatintea-plugins",
+  "owner": {
+    "name": "teacatintea-create"
+  },
+  "metadata": {
+    "description": "Плагины Claude Code от teacatintea-create"
+  },
+  "plugins": [
+    {
+      "name": "obsidian-export",
+      "source": "./claude-plugins/obsidian-export",
+      "description": "Автоматический экспорт диалогов Claude в Obsidian (Markdown)",
+      "version": "1.0.0",
+      "category": "productivity",
+      "keywords": ["obsidian", "markdown", "export"]
+    }
+  ]
+}

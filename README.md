@@ -56,3 +56,17 @@ app/src/main/java/com/practiceboard/app/
 ├── widget/                  — виджет-доска (AppWidgetProvider + RemoteViewsService)
 └── ui/                      — экраны на Jetpack Compose
 ```
+
+## Плагин Claude Code: экспорт диалогов в Obsidian
+
+В репозитории также лежит плагин [`obsidian-export`](claude-plugins/obsidian-export/README.md).
+Он автоматически сохраняет диалоги Claude в хранилище Obsidian в формате Markdown,
+а скилл к нему добавляет ручной экспорт с кратким описанием.
+
+```
+/plugin install obsidian-export --marketplace teacatintea-create/Beta-app
+```
+
+или в два шага: `/plugin marketplace add teacatintea-create/Beta-app`, затем
+`/plugin install obsidian-export@teacatintea-plugins`.
+Архив для загрузки через claude.ai лежит в `claude-plugins/dist/obsidian-export.zip`.

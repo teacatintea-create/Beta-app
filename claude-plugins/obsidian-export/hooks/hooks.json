@@ -1,0 +1,27 @@
+{
+  "description": "Обновляет заметку Obsidian с диалогом после каждого ответа Claude и при завершении сессии",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 && exec python3 \"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-export/scripts/obsidian_export.py\" hook; exec python \"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-export/scripts/obsidian_export.py\" hook",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 && exec python3 \"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-export/scripts/obsidian_export.py\" hook; exec python \"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-export/scripts/obsidian_export.py\" hook",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

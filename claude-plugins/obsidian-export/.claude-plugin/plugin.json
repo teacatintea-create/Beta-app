@@ -1,0 +1,11 @@
+{
+  "name": "obsidian-export",
+  "version": "1.0.0",
+  "description": "Автоматический экспорт диалогов Claude в Obsidian в формате Markdown: хуки сохраняют каждую сессию в хранилище, скилл делает ручной экспорт с кратким описанием, тегами и импортом истории claude.ai.",
+  "author": {
+    "name": "teacatintea-create"
+  },
+  "repository": "https://github.com/teacatintea-create/Beta-app",
+  "license": "MIT",
+  "keywords": ["obsidian", "markdown", "export", "notes", "transcript", "dialog"]
+}
