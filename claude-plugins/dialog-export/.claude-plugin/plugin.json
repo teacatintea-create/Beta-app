@@ -1,0 +1,5 @@
+{
+  "name": "dialog-export",
+  "version": "0.1.0",
+  "description": "/export-dialog: экспорт диалога в HTML, Markdown, JSON или PDF с формулами (KaTeX), картинками, файлами и кодом"
+}
