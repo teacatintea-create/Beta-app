@@ -52,6 +52,12 @@ $4
 EOF
 }
 
+# SDK выбирается по global.json в текущей папке: закрепляем 8.x, на нём проверка отлажена
+cd "$WORK"
+echo '{"sdk":{"version":"8.0.100","rollForward":"latestFeature"}}' > global.json
+dotnet --list-sdks
+echo "Выбран .NET SDK $(dotnet --version)"
+
 project "$WORK/rt" Assembly-CSharp "$ROOT/Assets/Kosynka/Scripts" ""
 dotnet build "$WORK/rt/Assembly-CSharp.csproj" -nologo -c Release -o "$WORK/rt/out"
 
