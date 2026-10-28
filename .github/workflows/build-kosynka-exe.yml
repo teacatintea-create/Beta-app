@@ -10,7 +10,19 @@ permissions:
   contents: write
 
 jobs:
+  # Без лицензии Unity: компилирует скрипты против справочных сборок Unity
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compile check
+        run: kosynka-unity/ci/compile-check.sh "$RUNNER_TEMP/kosynka-check"
+
   build:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - name: Check Unity secrets
