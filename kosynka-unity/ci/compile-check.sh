@@ -18,8 +18,17 @@ fetch() { # id version dir
 fetch unityengine.modules 2021.3.33 "$WORK/refs/engine"
 fetch unity3d.sdk 2021.1.14.1 "$WORK/refs/sdk"
 
+shopt -s nullglob
+ENGINE=("$WORK"/refs/engine/lib/net35/*.dll)
+echo "Справочных сборок UnityEngine: ${#ENGINE[@]}"
+if [ "${#ENGINE[@]}" -lt 10 ] || [ ! -f "$WORK/refs/sdk/lib/UnityEditor.dll" ]; then
+  echo "Справочные сборки Unity не найдены:" >&2
+  find "$WORK/refs" -maxdepth 3 >&2
+  exit 1
+fi
+
 refs() {
-  for f in "$WORK"/refs/engine/lib/net35/*.dll; do
+  for f in "${ENGINE[@]}"; do
     echo "    <Reference Include=\"$(basename "$f" .dll)\"><HintPath>$f</HintPath></Reference>"
   done
 }
