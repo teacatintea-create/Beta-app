@@ -97,13 +97,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--bronze-hi);outl
 .corner.plate{left:4%;top:3%;right:auto;background:var(--plate);padding:.12em .18em .14em;border-radius:.22em}
 .corner.plate .mini{display:none}
 .art{position:absolute;left:3%;top:21%;width:94%;height:77%}
-.pic{position:absolute;background-repeat:no-repeat;background-position:center}
+.pic{position:absolute;overflow:hidden}
+.pic img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
 .pic.area-below{left:5%;right:5%;top:22%;bottom:4%;border-radius:calc(var(--cw)*.04)}
 .pic.area-full{inset:0}
-.pic.fit-cover{background-size:cover}
-.pic.fit-contain{background-size:contain}
-.pic.focus-top{background-position:center top}
-.pic.focus-bottom{background-position:center bottom}
+.cap{
+  position:absolute;z-index:2;left:6%;right:6%;bottom:3%;padding:.18em .3em;
+  background:var(--plate);border-radius:calc(var(--cw)*.03);
+  font:500 calc(var(--cw)*.11)/1.15 var(--f-body);text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .pips{position:absolute;left:14%;right:14%;top:26%;bottom:7%}
 .pips i{position:absolute;transform:translate(-50%,-50%);font-style:normal;font-size:calc(var(--cw)*.21);line-height:1}
 .pips i.flip{transform:translate(-50%,-50%) rotate(180deg)}
@@ -175,10 +178,24 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--bronze)}
 .thumb .del{position:absolute;top:-6px;right:-6px;width:22px;height:22px;padding:0;border-radius:50%;font-size:13px;display:grid;place-items:center}
 .chips{display:grid;grid-template-columns:22px repeat(13,minmax(0,1fr));gap:3px;align-items:center}
 .chips .suitpick{padding:0;height:24px;font-size:15px;border-radius:4px}
-.chip{aspect-ratio:5/7;padding:0;border-radius:3px;background:#f3ecdc center/cover no-repeat;color:var(--ink);font:500 9px/1 var(--f-body);border:1px solid transparent}
+.chip{position:relative;aspect-ratio:5/7;padding:0;border-radius:3px;background:#f3ecdc center/cover no-repeat;color:var(--ink);font:500 9px/1 var(--f-body);border:1px solid transparent}
 .chip.r{color:#c8142f}
 .chip.on{outline:2px solid var(--bronze-hi);outline-offset:1px}
 .chip.has{color:transparent}
+.chip.mod::after{content:"";position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:50%;background:var(--bronze-hi);box-shadow:0 0 0 1px var(--ink)}
+.ed-top{display:flex;align-items:center;gap:14px}
+.ed-prev{--cw:92px;position:relative;flex:none;width:92px;height:129px}
+.ed-prev .card{transform:none;transition:none;cursor:default}
+.ed-title{font-family:var(--f-display);font-size:20px;line-height:1.1;margin:0 0 4px}
+.ed-section{display:flex;flex-direction:column;gap:20px;padding-top:4px;border-top:1px solid var(--slot-line)}
+.swatches{display:flex;flex-wrap:wrap;gap:7px}
+.sw{width:30px;height:30px;padding:0;border-radius:50%;border:2px solid var(--slot-line)}
+.sw[aria-pressed="true"]{border-color:var(--bronze-hi);box-shadow:0 0 0 2px var(--floor-hi),0 0 0 4px var(--bronze)}
+.lib.small{grid-template-columns:repeat(auto-fill,minmax(50px,1fr))}
+.lib .pick[aria-pressed="true"]{outline:2px solid var(--bronze-hi);outline-offset:2px}
+input[type=text]{width:100%;font:400 14px var(--f-body);color:var(--chalk);background:var(--floor);border:1px solid var(--slot-line);border-radius:6px;padding:9px 10px}
+.range-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;font-size:13px}
+.range-row output{min-width:3.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 .sheet-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--slot-line)}
 
 @media (prefers-reduced-motion:reduce){
@@ -199,7 +216,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--bronze)}
     <button id="btnNew" type="button" class="primary">Новая раздача</button>
   </div>
 </header>
-<p class="hint">Тап по карте отправляет её на лучшее место. Стопки можно перетаскивать. Колоду листай тапом. Ctrl+Z отменяет ход. В «Колоде» меняются рисунки, рубашка и стол.</p>
+<p class="hint">Тап по карте отправляет её на лучшее место. Стопки можно перетаскивать. Колоду листай тапом. Ctrl+Z отменяет ход. В «Колоде» меняются рисунки, рубашка и стол. Долгое нажатие или правый клик по открытой карте открывает её настройки.</p>
 <main id="board" aria-label="Игровой стол"></main>
 
 <div id="win" hidden>
@@ -219,7 +236,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--bronze)}
     <div class="preview" id="preview"></div>
     <div class="tabs" role="tablist">
       <button class="tab" type="button" role="tab" data-tab="faces" aria-selected="true">Карты</button>
-      <button class="tab" type="button" role="tab" data-tab="pics" aria-selected="false">Свои картинки</button>
+      <button class="tab" type="button" role="tab" data-tab="pics" aria-selected="false">Картинки</button>
+      <button class="tab" type="button" role="tab" data-tab="cards" aria-selected="false">По картам</button>
       <button class="tab" type="button" role="tab" data-tab="back" aria-selected="false">Рубашка</button>
       <button class="tab" type="button" role="tab" data-tab="table" aria-selected="false">Стол</button>
     </div>
@@ -257,18 +275,73 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--bronze)}
             <button type="button" data-deal="clear">Убрать со всех</button>
           </div>
         </div>
-        <div class="field"><span class="lab">Карты по одной</span>
-          <p class="note" id="selNote">Отметь карты, потом нажми на картинку в библиотеке. Значок масти слева выделяет всю масть.</p>
-          <div class="chips" id="chips"></div>
-          <div class="seg">
-            <button type="button" id="selAll">Выбрать все</button>
-            <button type="button" id="selNone">Снять выбор</button>
-            <button type="button" id="selClear">Убрать картинку у выбранных</button>
-          </div>
-        </div>
+        <p class="note">Поставить картинку на конкретную карту, приблизить или сдвинуть её можно во вкладке «По картам».</p>
         <div class="field"><span class="lab">Как вписать</span><div class="seg" data-seg="fit"></div></div>
         <div class="field"><span class="lab">Где на карте</span><div class="seg" data-seg="area"></div></div>
         <div class="field"><span class="lab">Какую часть показывать</span><div class="seg" data-seg="focus"></div></div>
+      </div>
+
+      <div data-pane="cards" style="display:contents" hidden>
+        <div class="field">
+          <span class="lab">Какие карты настраиваем</span>
+          <div class="chips" id="chips"></div>
+          <div class="row">
+            <label><input type="checkbox" id="multi"> Выбирать несколько</label>
+          </div>
+          <div class="seg">
+            <button type="button" id="selAll">Выбрать все</button>
+            <button type="button" id="selNone">Снять выбор</button>
+          </div>
+          <p class="note" id="selNote"></p>
+        </div>
+        <div id="editor" class="ed-section" hidden>
+          <div class="ed-top">
+            <div class="ed-prev" id="edPrev"></div>
+            <div>
+              <p class="ed-title" id="edTitle"></p>
+              <p class="note" id="edSub"></p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Рисунок</span><div class="seg" data-eseg="art"></div></div>
+
+          <div class="ed-section" id="edImage">
+            <div class="field"><span class="lab">Картинка</span>
+              <div class="lib small" id="edLib"></div>
+              <button type="button" id="btnCardPic">Загрузить картинку для этих карт</button>
+              <input type="file" id="fileCard" accept="image/*" hidden>
+            </div>
+            <div class="field"><span class="lab">Как вписать</span><div class="seg" data-eseg="fit"></div></div>
+            <div class="field"><span class="lab">Где на карте</span><div class="seg" data-eseg="area"></div></div>
+            <div class="field"><span class="lab">Кадр</span>
+              <label class="range-row">Масштаб <input type="range" id="e-zoom" data-ovr="zoom" min="100" max="300" step="5"><output id="o-zoom"></output></label>
+              <label class="range-row">Влево–вправо <input type="range" id="e-posX" data-ovr="posX" min="0" max="100" step="1"><output id="o-posX"></output></label>
+              <label class="range-row">Вверх–вниз <input type="range" id="e-posY" data-ovr="posY" min="0" max="100" step="1"><output id="o-posY"></output></label>
+            </div>
+          </div>
+
+          <div class="ed-section" id="edBuff">
+            <div class="field"><span class="lab">Поза</span><div class="seg" data-bseg="pose"></div></div>
+            <div class="field"><span class="lab">Причёска</span><div class="seg" data-bseg="hair"></div></div>
+            <div class="field"><span class="lab">Кожа</span><div class="swatches" id="swSkin"></div></div>
+            <div class="field"><span class="lab">Цвет волос</span><div class="swatches" id="swHair"></div></div>
+            <div class="row"><label><input type="color" id="e-trunks" data-bcol="trunks"> Плавки</label></div>
+            <div class="field"><span class="lab">Аксессуары</span><div class="seg" id="edToggles"></div></div>
+          </div>
+
+          <div class="ed-section">
+            <div class="field"><span class="lab">Фон карты</span><div class="seg" data-eseg="face"></div>
+              <div class="row" id="edFaceColorRow"><label><input type="color" id="e-faceColor" data-ovc="faceColor"> Свой цвет фона</label></div>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="e-colorOn"> Свой цвет масти</label>
+              <input type="color" id="e-color" aria-label="Цвет масти">
+            </div>
+            <div class="field"><label class="lab" for="e-caption">Подпись внизу карты</label>
+              <input type="text" id="e-caption" maxlength="24" placeholder="Например: «Жим 140»" autocomplete="off">
+            </div>
+            <div class="seg"><button type="button" id="selClear">Сбросить выбранные карты</button></div>
+          </div>
+        </div>
       </div>
 
       <div data-pane="back" style="display:contents" hidden>
@@ -315,10 +388,12 @@ const defaults = () => ({
   back: 'dumbbell', backColor: '#5a1a20', backInk: '#d9963a', backImage: null,
   table: 'rubber', tableColor: '#2b4a3a', tableImage: null,
   assign: {},
+  cards: {},
 });
 let skin = defaults();
 try { Object.assign(skin, JSON.parse(localStorage.getItem('kosynka-skin') || '{}')); } catch (e) {}
 if (!skin.assign || typeof skin.assign !== 'object') skin.assign = {};
+if (!skin.cards || typeof skin.cards !== 'object') skin.cards = {};
 const saveSkin = () => { try { localStorage.setItem('kosynka-skin', JSON.stringify(skin)); } catch (e) {} };
 
 const SEGS = {
@@ -429,6 +504,7 @@ async function addFiles(files, purpose) {
   if (last && purpose === 'back') { skin.back = 'image'; skin.backImage = last; }
   if (last && purpose === 'table') { skin.table = 'image'; skin.tableImage = last; }
   if (last && purpose === 'lib' && !Object.keys(skin.assign).length) { dealImages('order'); }
+  if (last && purpose === 'card') selected.forEach(id => { const o = skin.cards[id] || (skin.cards[id] = {}); o.img = last; o.art = 'image'; });
   libMessage(failed ? `Не получилось открыть файлов: ${failed}. Подойдут JPG, PNG, WebP и GIF.` : null);
   commit();
 }
@@ -441,6 +517,7 @@ function removeImg(id) {
   imgById.delete(id);
   DB.del(id);
   for (const k of Object.keys(skin.assign)) if (skin.assign[k] === id) delete skin.assign[k];
+  for (const o of Object.values(skin.cards)) if (o.img === id) delete o.img;
   if (skin.backImage === id) skin.backImage = null;
   if (skin.tableImage === id) skin.tableImage = null;
   commit();
@@ -464,8 +541,11 @@ function dealImages(mode) {
 }
 
 /* ---------- Качки ---------- */
-const SKINS = [['#efc39b','#b98257'],['#d99a62','#9a6136'],['#b97644','#7a4520'],['#8a5430','#55301a'],['#e6ae7c','#a8703f'],['#c4834f','#87512a']];
-const HAIRS = ['#24160d','#5b3a1c','#d6ac52','#121212','#8b3a19'];
+// первые 6 тонов кожи и 5 цветов волос раздаются по умолчанию, остальные доступны в редакторе карты
+const SKINS = [['#efc39b','#b98257'],['#d99a62','#9a6136'],['#b97644','#7a4520'],['#8a5430','#55301a'],['#e6ae7c','#a8703f'],['#c4834f','#87512a'],['#f6d5bd','#c99a7a'],['#b58b5a','#7d5a32'],['#5a3520','#2f1a0c']];
+const HAIRS = ['#24160d','#5b3a1c','#d6ac52','#121212','#8b3a19','#e9e4da','#c0392b','#3b6fd8','#e2557a'];
+const TRUNKS = ['#d3203a','#e2557a','#1e2230','#24402f'];
+const EXTRAS = [['mus','Усы'],['shades','Очки'],['beard','Борода'],['band','Повязка'],['crown','Корона'],['tiara','Диадема'],['belt','Пояс'],['cape','Плащ'],['gold','Золотые искры']];
 const LOOKS = {
   1:{pose:'double',hair:'pomp',belt:1,gold:1},
   2:{pose:'double',hair:'buzz'},
@@ -529,12 +609,19 @@ function head(L, S, D, H, accent) {
   return s;
 }
 
-function figure(suit, rank) {
-  const L = LOOKS[rank];
-  const [S, D] = SKINS[(rank * 5 + suit * 2) % SKINS.length];
-  const H = HAIRS[(rank * 3 + suit) % HAIRS.length];
+function defaultLook(id) {
+  const suit = Math.floor(id / 13), rank = id % 13 + 1;
+  const L = { pose: 'double', hair: 'buzz', skin: (rank * 5 + suit * 2) % 6, hairColor: HAIRS[(rank * 3 + suit) % 5], trunks: TRUNKS[suit] };
+  EXTRAS.forEach(([k]) => { L[k] = 0; });
+  return Object.assign(L, LOOKS[rank]);
+}
+const lookOf = id => Object.assign(defaultLook(id), (skin.cards[id] || {}).buff);
+
+function figure(suit, rank, L) {
+  const [S, D] = SKINS[L.skin] || SKINS[0];
+  const H = L.hairColor;
   const red = RED[suit];
-  const trunks = ['#d3203a','#e2557a','#1e2230','#24402f'][suit];
+  const trunks = L.trunks;
   const accent = red ? '#d3203a' : '#2b5fd9';
   let s = `<text x="50" y="96" font-size="100" text-anchor="middle" fill="currentColor" opacity=".08" font-family="serif">${SUIT_CH[suit]}</text>`;
   s += L.gold
@@ -579,16 +666,65 @@ function classic(suit, rank) {
   return `<div class="pips">${PIPS[rank].map(([x, y]) => `<i style="left:${x}%;top:${y}%"${y > 50 ? ' class="flip"' : ''}>${sym}</i>`).join('')}</div>`;
 }
 
-function faceInner(suit, rank) {
-  const sym = SUIT_CH[suit];
-  const corner = plate => `<div class="corner${plate ? ' plate' : ''}"><span>${RANKS[rank]}<i>${sym}</i></span><i class="mini">${sym}</i></div>`;
-  let mode = skin.art;
-  if (mode === 'custom') {
-    const img = imgById.get(skin.assign[suit * 13 + rank - 1]);
-    if (img) return `<div class="pic fit-${skin.fit} area-${skin.area} focus-${skin.focus}" style="background-image:url('${img.url}')"></div>` + corner(skin.area === 'full');
-    mode = skin.fallback;
+const FOCUS_Y = { top: 0, center: 50, bottom: 100 };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const rgb = hex => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const hexA = (hex, a) => `rgba(${rgb(hex).join(',')},${a})`;
+const shade = (hex, k) => `rgb(${rgb(hex).map(v => Math.round(v * k)).join(',')})`;
+
+function suitColor(suit, dark) {
+  const four = skin.suitColors === 'four';
+  const black = dark && lum(skin.black) < 0.45 ? '#eceae2' : skin.black;
+  return [skin.red, four ? (dark ? '#5b8ff0' : '#1f5fd1') : skin.red, black, four ? (dark ? '#3fbf6a' : '#16823a') : black][suit];
+}
+
+// Что нарисовано на карте с учётом её личных настроек: 'image' | 'buff' | 'classic'
+function cardArt(id) {
+  const ov = skin.cards[id] || {};
+  const plain = skin.art === 'custom' ? skin.fallback : skin.art;
+  const art = ov.art || (skin.art === 'custom' ? 'image' : skin.art);
+  if (art === 'image') return imgFor(id) ? 'image' : plain;
+  return art;
+}
+
+function faceInner(id) {
+  const suit = Math.floor(id / 13), rank = id % 13 + 1, sym = SUIT_CH[suit];
+  const ov = skin.cards[id] || {};
+  const art = cardArt(id);
+  let h, plate = false;
+  if (art === 'image') {
+    const img = imgFor(id);
+    const fit = ov.fit || skin.fit, area = ov.area || skin.area;
+    const x = ov.posX ?? 50, y = ov.posY ?? FOCUS_Y[skin.focus] ?? 50, z = (ov.zoom || 100) / 100;
+    plate = area === 'full';
+    h = `<div class="pic area-${area}"><img src="${img.url}" alt="" draggable="false" style="object-fit:${fit};object-position:${x}% ${y}%;transform:scale(${z});transform-origin:${x}% ${y}%"></div>`;
+  } else {
+    h = art === 'classic' ? classic(suit, rank) : figure(suit, rank, lookOf(id));
   }
-  return corner(false) + (mode === 'classic' ? classic(suit, rank) : figure(suit, rank));
+  h += `<div class="corner${plate ? ' plate' : ''}"><span>${RANKS[rank]}<i>${sym}</i></span><i class="mini">${sym}</i></div>`;
+  if (ov.caption) h += `<div class="cap">${esc(ov.caption)}</div>`;
+  return h;
+}
+
+function faceStyle(id) {
+  const ov = skin.cards[id] || {};
+  let st = '';
+  if (ov.face) {
+    let f = FACES[ov.face];
+    if (ov.face === 'color') {
+      const c = ov.faceColor || '#fbf6ec';
+      f = { bg: c, court: c, ace: c, edge: shade(c, 0.8), plate: hexA(c, 0.88), dark: lum(c) < 0.45 };
+    }
+    if (f) st += `--face-bg:${f.bg};--court-bg:${f.court};--ace-bg:${f.ace};--face-edge:${f.edge};--plate:${f.plate};color:${suitColor(Math.floor(id / 13), !!f.dark)};`;
+  }
+  if (ov.color) st += `color:${ov.color};`;
+  return st;
+}
+
+function renderCard(el, id) {
+  const face = el.querySelector('.face');
+  face.innerHTML = faceInner(id);
+  face.style.cssText = faceStyle(id);
 }
 
 function makeCardEl(suit, rank) {
@@ -834,6 +970,12 @@ board.addEventListener('pointerdown', e => {
   const arr = pileArr(loc);
   if (loc.pile !== 'tab' && loc.pos !== arr.length - 1) return;
   drag = { ids: loc.pile === 'tab' ? arr.slice(loc.pos) : [id], loc, sx: e.clientX, sy: e.clientY, dx: 0, dy: 0, moved: false, pid: e.pointerId };
+  drag.lp = setTimeout(() => {
+    if (!drag || drag.moved) return;
+    try { board.releasePointerCapture(drag.pid); } catch (err) {}
+    drag = null;
+    openEditor(id);
+  }, 550);
   try { board.setPointerCapture(e.pointerId); } catch (err) {}
 });
 
@@ -842,6 +984,7 @@ board.addEventListener('pointermove', e => {
   const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
   if (!drag.moved) {
     if (Math.hypot(dx, dy) < 6) return;
+    clearTimeout(drag.lp);
     drag.moved = true;
     drag.ids.forEach((id, i) => { const el = cards[id].el; el.classList.add('drag'); el.style.zIndex = 3000 + i; });
   }
@@ -853,6 +996,7 @@ function endDrag(e) {
   if (!drag || e.pointerId !== drag.pid) return;
   const d = drag;
   drag = null;
+  clearTimeout(d.lp);
   d.ids.forEach(id => cards[id].el.classList.remove('drag'));
   if (!d.moved) { if (e.type === 'pointerup') tapCard(d); return; }
   const tg = e.type === 'pointerup' ? findDrop(d) : null;
@@ -860,6 +1004,13 @@ function endDrag(e) {
   else layout();
 }
 board.addEventListener('pointerup', endDrag);
+board.addEventListener('contextmenu', e => {
+  const el = e.target.closest('.card');
+  e.preventDefault();
+  if (!el || !cards[+el.dataset.id].up || won || autoRunning) return;
+  if (drag) { clearTimeout(drag.lp); drag.ids.forEach(i => cards[i].el.classList.remove('drag')); drag = null; layout(); }
+  openEditor(+el.dataset.id);
+});
 board.addEventListener('pointercancel', endDrag);
 
 function afterMove() {
@@ -936,19 +1087,14 @@ const previewBack = makeCardEl(0, 2);
 previewBack.removeAttribute('aria-label');
 $('preview').appendChild(previewBack);
 
-function applySkin() {
+function applySkin(ids) {
   const root = document.documentElement, st = root.style, f = FACES[skin.face] || FACES.cream;
   st.setProperty('--face-bg', f.bg);
   st.setProperty('--court-bg', f.court);
   st.setProperty('--ace-bg', f.ace);
   st.setProperty('--face-edge', f.edge);
   st.setProperty('--plate', f.plate);
-  const four = skin.suitColors === 'four';
-  const black = f.dark && lum(skin.black) < 0.45 ? '#eceae2' : skin.black;
-  st.setProperty('--c0', skin.red);
-  st.setProperty('--c1', four ? (f.dark ? '#5b8ff0' : '#1f5fd1') : skin.red);
-  st.setProperty('--c2', black);
-  st.setProperty('--c3', four ? (f.dark ? '#3fbf6a' : '#16823a') : black);
+  [0, 1, 2, 3].forEach(s => st.setProperty('--c' + s, suitColor(s, !!f.dark)));
   st.setProperty('--corner-font', FONTS[skin.font] || FONTS.russo);
   st.setProperty('--corner-scale', skin.cornerScale);
   st.setProperty('--r', skin.radius / 100);
@@ -966,8 +1112,8 @@ function applySkin() {
   root.style.background = bg;
   document.body.style.background = bg;
 
-  cards.forEach(c => { c.el.querySelector('.face').innerHTML = faceInner(c.suit, c.rank); });
-  previewEls.forEach((el, i) => { const id = PREVIEW_IDS[i]; el.querySelector('.face').innerHTML = faceInner(Math.floor(id / 13), id % 13 + 1); });
+  (ids ? [...ids] : cards.map(c => c.id)).forEach(id => renderCard(cards[id].el, id));
+  previewEls.forEach((el, i) => renderCard(el, PREVIEW_IDS[i]));
 }
 
 /* ---------- Панель ---------- */
@@ -1010,18 +1156,18 @@ function syncUI() {
   });
   renderLib();
   renderChips();
+  syncEditor();
 }
+
+const imgFor = id => imgById.get((skin.cards[id] || {}).img) || imgById.get(skin.assign[id]);
 
 function renderLib() {
   $('libField').hidden = !imgs.length;
-  $('lib').innerHTML = imgs.map(i => `<div class="thumb"><button type="button" class="pick" data-img="${i.id}" style="background-image:url('${i.url}')" aria-label="Поставить ${i.name.replace(/"/g, '')} на выбранные карты"></button><button type="button" class="del" data-del="${i.id}" aria-label="Удалить картинку">×</button></div>`).join('');
+  $('lib').innerHTML = imgs.map(i => `<div class="thumb"><button type="button" class="pick" data-img="${i.id}" style="background-image:url('${i.url}')" aria-label="Картинка ${esc(i.name)}"></button><button type="button" class="del" data-del="${i.id}" aria-label="Удалить картинку">×</button></div>`).join('');
   const notes = [];
   if (libMsg) notes.push(libMsg);
   notes.push(dbOk ? 'Картинки хранятся только в этом браузере и никуда не отправляются.' : 'Браузер не дал сохранить картинки: после перезагрузки их придётся добавить заново.');
   $('libNote').textContent = notes.join(' ');
-  $('selNote').textContent = selected.size
-    ? `Выбрано карт: ${selected.size}. Нажми на картинку в библиотеке, чтобы поставить её на них.`
-    : 'Отметь карты, потом нажми на картинку в библиотеке. Значок масти слева выделяет всю масть.';
 }
 
 function renderChips() {
@@ -1030,35 +1176,145 @@ function renderChips() {
     h += `<button type="button" class="suitpick" data-suit="${s}" style="color:${RED[s] ? '#e0475e' : 'var(--chalk)'}" aria-label="Выделить всю масть ${SUIT_NAME[s]}">${SUIT_CH[s]}</button>`;
     for (let r = 1; r <= 13; r++) {
       const id = s * 13 + r - 1;
-      const img = imgById.get(skin.assign[id]);
-      h += `<button type="button" class="chip${RED[s] ? ' r' : ''}${img ? ' has' : ''}${selected.has(id) ? ' on' : ''}" data-chip="${id}"${img ? ` style="background-image:url('${img.url}')"` : ''} aria-pressed="${selected.has(id)}" aria-label="${RANKS[r]} ${SUIT_NAME[s]}">${RANKS[r]}</button>`;
+      const img = imgFor(id);
+      h += `<button type="button" class="chip${RED[s] ? ' r' : ''}${img ? ' has' : ''}${skin.cards[id] ? ' mod' : ''}${selected.has(id) ? ' on' : ''}" data-chip="${id}"${img ? ` style="background-image:url('${img.url}')"` : ''} aria-pressed="${selected.has(id)}" aria-label="${RANKS[r]} ${SUIT_NAME[s]}">${RANKS[r]}</button>`;
     }
   }
   $('chips').innerHTML = h;
 }
 
-function commit() {
+function commit(ids) {
   saveSkin();
-  applySkin();
+  applySkin(ids);
   syncUI();
 }
 
+/* ---------- Редактор отдельной карты ---------- */
+const RANK_FULL = ['', 'Туз', 'Двойка', 'Тройка', 'Четвёрка', 'Пятёрка', 'Шестёрка', 'Семёрка', 'Восьмёрка', 'Девятка', 'Десятка', 'Валет', 'Дама', 'Король'];
+const SUIT_GEN = ['червей', 'бубен', 'пик', 'треф'];
+const ESEGS = {
+  art: [['','Как у колоды'],['buff','Качок'],['classic','Классика'],['image','Картинка']],
+  fit: [['','Как у колоды'],['cover','Заполнить'],['contain','Целиком']],
+  area: [['','Как у колоды'],['below','Под индексом'],['full','На всю карту']],
+  face: [['','Как у колоды'],['cream','Кремовый'],['white','Белый'],['vintage','Бумага'],['dark','Тёмный'],['color','Свой цвет']],
+};
+const BSEGS = {
+  pose: [['double','Двойной бицепс'],['crab','Краб'],['lift','Штанга']],
+  hair: [['pomp','Кок'],['flat','Площадка'],['buzz','Ёжик'],['mohawk','Ирокез'],['bald','Лысый'],['long','Длинные']],
+};
+const segHTML = (opts, attr) => opts.map(([v, t]) => `<button type="button" ${attr}="${v}">${t}</button>`).join('');
+document.querySelectorAll('[data-eseg]').forEach(b => { b.innerHTML = segHTML(ESEGS[b.dataset.eseg], 'data-v'); });
+document.querySelectorAll('[data-bseg]').forEach(b => { b.innerHTML = segHTML(BSEGS[b.dataset.bseg], 'data-v'); });
+$('edToggles').innerHTML = segHTML(EXTRAS, 'data-btog');
+$('swSkin').innerHTML = SKINS.map(([c], i) => `<button type="button" class="sw" data-bskin="${i}" style="background:${c}" aria-label="Тон кожи ${i + 1}"></button>`).join('');
+$('swHair').innerHTML = HAIRS.map((c, i) => `<button type="button" class="sw" data-bhair="${c}" style="background:${c}" aria-label="Цвет волос ${i + 1}"></button>`).join('');
+
+const anchorId = () => selected.size ? [...selected][0] : null;
+const setVal = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+
+function setOv(key, value) {
+  selected.forEach(id => {
+    const o = skin.cards[id] || (skin.cards[id] = {});
+    if (value === undefined || value === '') delete o[key]; else o[key] = value;
+    if (!Object.keys(o).length) delete skin.cards[id];
+  });
+  commit(selected);
+}
+
+function setBuff(key, value) {
+  selected.forEach(id => {
+    const o = skin.cards[id] || (skin.cards[id] = {});
+    o.buff = Object.assign(lookOf(id), { [key]: value });
+    if (cardArt(id) !== 'buff') o.art = 'buff';
+  });
+  commit(selected);
+}
+
+function syncEditor() {
+  const id = anchorId();
+  $('selNote').textContent = selected.size > 1
+    ? `Выбрано карт: ${selected.size}. Изменения ниже ставятся на все выбранные.`
+    : 'Нажми на карту в сетке. Значок масти слева выделяет всю масть. Точкой отмечены карты со своими настройками. На столе карту можно открыть долгим нажатием.';
+  $('editor').hidden = id === null;
+  if (id === null) return;
+  const suit = Math.floor(id / 13), rank = id % 13 + 1;
+  const ov = skin.cards[id] || {}, look = lookOf(id), art = cardArt(id);
+  const prev = makeCardEl(suit, rank);
+  prev.classList.add('up');
+  renderCard(prev, id);
+  $('edPrev').replaceChildren(prev);
+  $('edTitle').textContent = `${RANK_FULL[rank]} ${SUIT_GEN[suit]}`;
+  $('edSub').textContent = selected.size > 1 ? `и ещё ${selected.size - 1}. Изменения ставятся на все выбранные карты.` : 'Эти настройки только для этой карты.';
+
+  const press = (sel, get, cur) => document.querySelectorAll(sel).forEach(b => b.setAttribute('aria-pressed', String(get(b) === String(cur))));
+  ['art', 'fit', 'area', 'face'].forEach(k => press(`[data-eseg="${k}"] button`, b => b.dataset.v, ov[k] || ''));
+  press('[data-bseg="pose"] button', b => b.dataset.v, look.pose);
+  press('[data-bseg="hair"] button', b => b.dataset.v, look.hair);
+  press('[data-bskin]', b => b.dataset.bskin, look.skin);
+  press('[data-bhair]', b => b.dataset.bhair, look.hairColor);
+  document.querySelectorAll('[data-btog]').forEach(b => b.setAttribute('aria-pressed', String(!!look[b.dataset.btog])));
+
+  const chosen = ov.art || (skin.art === 'custom' ? 'image' : skin.art);
+  $('edImage').hidden = chosen !== 'image' && art !== 'image';
+  $('edBuff').hidden = art !== 'buff';
+  $('edFaceColorRow').hidden = ov.face !== 'color';
+  const cur = imgFor(id);
+  $('edLib').innerHTML = imgs.length
+    ? imgs.map(i => `<div class="thumb"><button type="button" class="pick" data-cardimg="${i.id}" aria-pressed="${!!cur && cur.id === i.id}" style="background-image:url('${i.url}')" aria-label="Поставить картинку ${esc(i.name)}"></button></div>`).join('')
+    : '<p class="note">В библиотеке пока пусто. Загрузи картинку кнопкой ниже.</p>';
+  const zoom = ov.zoom || 100, px = ov.posX ?? 50, py = ov.posY ?? FOCUS_Y[skin.focus] ?? 50;
+  setVal('e-zoom', zoom); setVal('e-posX', px); setVal('e-posY', py);
+  $('o-zoom').textContent = zoom + '%';
+  $('o-posX').textContent = px + '%';
+  $('o-posY').textContent = py + '%';
+  setVal('e-trunks', look.trunks);
+  setVal('e-faceColor', ov.faceColor || '#fbf6ec');
+  $('e-colorOn').checked = !!ov.color;
+  setVal('e-color', ov.color || suitColor(suit, false));
+  setVal('e-caption', ov.caption || '');
+}
+
+$('editor').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || anchorId() === null) return;
+  const eseg = b.closest('[data-eseg]');
+  if (eseg) {
+    if (eseg.dataset.eseg === 'art' && b.dataset.v === 'image' && !imgs.length) { $('fileCard').click(); return; }
+    setOv(eseg.dataset.eseg, b.dataset.v);
+    return;
+  }
+  const bseg = b.closest('[data-bseg]');
+  if (bseg) { setBuff(bseg.dataset.bseg, b.dataset.v); return; }
+  if (b.dataset.btog) { setBuff(b.dataset.btog, lookOf(anchorId())[b.dataset.btog] ? 0 : 1); return; }
+  if (b.dataset.bskin) { setBuff('skin', +b.dataset.bskin); return; }
+  if (b.dataset.bhair) { setBuff('hairColor', b.dataset.bhair); return; }
+  if (b.dataset.cardimg) {
+    selected.forEach(id => { (skin.cards[id] || (skin.cards[id] = {})).img = b.dataset.cardimg; });
+    setOv('art', 'image');
+  }
+});
+$('editor').addEventListener('input', e => {
+  const t = e.target;
+  if (anchorId() === null) return;
+  if (t.dataset.ovr) setOv(t.dataset.ovr, +t.value);
+  else if (t.dataset.bcol) setBuff(t.dataset.bcol, t.value);
+  else if (t.id === 'e-faceColor') setOv('faceColor', t.value);
+  else if (t.id === 'e-color') { $('e-colorOn').checked = true; setOv('color', t.value); }
+  else if (t.id === 'e-colorOn') setOv('color', t.checked ? $('e-color').value : undefined);
+  else if (t.id === 'e-caption') setOv('caption', t.value.trim() || undefined);
+});
+$('btnCardPic').addEventListener('click', () => $('fileCard').click());
+
 $('lib').addEventListener('click', e => {
   const del = e.target.closest('[data-del]');
-  if (del) { removeImg(del.dataset.del); return; }
-  const pick = e.target.closest('[data-img]');
-  if (!pick) return;
-  if (!selected.size) { libMessage('Сначала отметь карты в сетке ниже.'); syncUI(); libMessage(null); return; }
-  selected.forEach(id => { skin.assign[id] = pick.dataset.img; });
-  skin.art = 'custom';
-  libMessage(null);
-  commit();
+  if (del) removeImg(del.dataset.del);
 });
 $('chips').addEventListener('click', e => {
   const sp = e.target.closest('[data-suit]');
   if (sp) {
     const ids = Array.from({ length: 13 }, (_, r) => +sp.dataset.suit * 13 + r);
     const all = ids.every(id => selected.has(id));
+    $('multi').checked = true;
     ids.forEach(id => all ? selected.delete(id) : selected.add(id));
     syncUI();
     return;
@@ -1066,12 +1322,14 @@ $('chips').addEventListener('click', e => {
   const chip = e.target.closest('[data-chip]');
   if (!chip) return;
   const id = +chip.dataset.chip;
-  selected.has(id) ? selected.delete(id) : selected.add(id);
+  if ($('multi').checked) selected.has(id) ? selected.delete(id) : selected.add(id);
+  else if (selected.size === 1 && selected.has(id)) selected.clear();
+  else { selected.clear(); selected.add(id); }
   syncUI();
 });
-$('selAll').addEventListener('click', () => { for (let i = 0; i < 52; i++) selected.add(i); syncUI(); });
+$('selAll').addEventListener('click', () => { $('multi').checked = true; for (let i = 0; i < 52; i++) selected.add(i); syncUI(); });
 $('selNone').addEventListener('click', () => { selected.clear(); syncUI(); });
-$('selClear').addEventListener('click', () => { selected.forEach(id => { delete skin.assign[id]; }); commit(); });
+$('selClear').addEventListener('click', () => { selected.forEach(id => { delete skin.cards[id]; }); commit(selected); });
 document.querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => {
   if (b.dataset.deal !== 'clear' && !imgs.length) { libMessage('Сначала добавь картинки.'); syncUI(); libMessage(null); return; }
   dealImages(b.dataset.deal);
@@ -1085,6 +1343,7 @@ const onFile = (inp, purpose) => inp.addEventListener('change', () => { if (inp.
 onFile($('fileLib'), 'lib');
 onFile($('fileBack'), 'back');
 onFile($('fileTable'), 'table');
+onFile($('fileCard'), 'card');
 const drop = $('drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
@@ -1094,6 +1353,13 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
   document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== name; });
+}
+function openEditor(id) {
+  selected.clear();
+  selected.add(id);
+  $('multi').checked = false;
+  showTab('cards');
+  openPanel();
 }
 function openPanel() { syncUI(); $('panel').hidden = false; $('btnClose').focus(); }
 function closePanel() { $('panel').hidden = true; selected.clear(); $('btnSkin').focus(); relayout(); }
