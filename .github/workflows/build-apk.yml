@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ "main", "master", "claude/**" ]
-    paths-ignore: [ "apk/**", "**.md" ]
+    paths-ignore: [ "apk/**", "**.md", "kosynka/**", "kosynka-unity/**", ".github/workflows/build-kosynka-exe.yml" ]
   workflow_dispatch:
 
 permissions:
