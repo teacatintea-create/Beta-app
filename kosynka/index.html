@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500&display=swap">
 <style>
-/* Layout: ночной зал — резиновый пол вместо сукна, полоса управления сверху, стол Клондайка из 7 колонок по центру (до 880px) */
+/* Layout: ночной зал — резиновый пол вместо сукна, полоса управления сверху, стол Клондайка из 7 колонок по центру (до 880px); настройки колоды — выезжающая справа панель */
 :root{
   --floor:#1b201e;
   --floor-hi:#262d2a;
@@ -13,28 +13,31 @@
   --muted:#a3aba2;
   --bronze:#d9963a;
   --bronze-hi:#f4c46e;
-  --card:#fbf6ec;
-  --card-edge:#d8cbb2;
   --ink:#17191b;
-  --red:#c8142f;
   --slot:rgba(241,236,226,.05);
   --slot-line:rgba(241,236,226,.2);
-  --back:#5a1a20;
   --shadow:rgba(0,0,0,.45);
   --f-display:"Russo One","Arial Black",Impact,sans-serif;
   --f-body:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;
+  /* настраиваемая колода (перезаписывается из JS) */
+  --face-bg:linear-gradient(172deg,#fffdf8,#fbf6ec 55%,#efe4cd);
+  --court-bg:linear-gradient(172deg,#fff8e6,#f7e7bf 60%,#ecd29a);
+  --ace-bg:radial-gradient(circle at 50% 62%,#fff1c4,#fbf6ec 62%);
+  --face-edge:#d8cbb2;
+  --plate:rgba(251,246,236,.88);
+  --c0:#c8142f; --c1:#c8142f; --c2:#17191b; --c3:#17191b;
+  --corner-font:var(--f-display);
+  --corner-scale:1;
+  --r:.08;
+  --back-color:#5a1a20;
+  --back-img:none;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{background:var(--floor)}
+html{height:100%;background:var(--floor)}
 body{
-  background-color:var(--floor);
-  background-image:
-    radial-gradient(rgba(241,236,226,.035) 1px,transparent 1.3px),
-    radial-gradient(rgba(0,0,0,.28) 1px,transparent 1.3px);
-  background-size:7px 7px,11px 11px;
-  background-position:0 0,3px 5px;
+  background:var(--floor);
   color:var(--chalk);
   font-family:var(--f-body);
   padding-left:max(16px,env(safe-area-inset-left,0px));
@@ -43,9 +46,9 @@ body{
   min-height:100%;
 }
 .top{max-width:880px;margin:0 auto 6px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
-.brand{font-family:var(--f-display);font-size:clamp(21px,4.8vw,30px);line-height:1;letter-spacing:.01em;margin:0;font-weight:400}
+.brand{font-family:var(--f-display);font-size:clamp(21px,4.8vw,30px);line-height:1;letter-spacing:.01em;margin:0;font-weight:400;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .brand em{font-style:normal;color:var(--bronze-hi);text-shadow:0 0 14px rgba(244,196,110,.35)}
-.stats{display:flex;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 .stats b{color:var(--chalk);font-weight:500}
 .controls{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
 button{
@@ -56,13 +59,13 @@ button:hover{border-color:var(--bronze)}
 button.primary{background:var(--bronze);color:var(--ink);border-color:transparent}
 button.primary:hover{background:var(--bronze-hi)}
 button:disabled{opacity:.4;cursor:default;border-color:var(--slot-line)}
-button:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
-.hint{max-width:880px;margin:0 auto 14px;font-size:12px;color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
+.hint{max-width:880px;margin:0 auto 14px;font-size:12px;color:var(--muted);text-shadow:0 1px 4px rgba(0,0,0,.6)}
 
 #board{position:relative;width:100%;max-width:880px;margin:0 auto;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .slot{
   position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);
-  border-radius:calc(var(--cw)*.08);border:1.5px dashed var(--slot-line);background:var(--slot);
+  border-radius:calc(var(--cw)*var(--r));border:1.5px dashed var(--slot-line);background:var(--slot);
   display:grid;place-items:center;color:var(--slot-line);
   font-family:var(--f-display);font-size:calc(var(--cw)*.34);
 }
@@ -71,38 +74,54 @@ button:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
 
 .card{
   position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);
-  border-radius:calc(var(--cw)*.08);touch-action:none;cursor:grab;
+  border-radius:calc(var(--cw)*var(--r));touch-action:none;cursor:grab;
   transition:transform .22s cubic-bezier(.2,.8,.3,1);
 }
 #board.instant .card{transition:none}
 .card.drag{transition:none;cursor:grabbing}
+.s0{--cs:var(--c0)} .s1{--cs:var(--c1)} .s2{--cs:var(--c2)} .s3{--cs:var(--c3)}
 .face,.back{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
-.face{
-  background:linear-gradient(172deg,#fffdf8,var(--card) 55%,#efe4cd);
-  border:1px solid var(--card-edge);
-  box-shadow:0 1px 3px var(--shadow);
-}
+.face{background:var(--face-bg);border:1px solid var(--face-edge);box-shadow:0 1px 3px var(--shadow);color:var(--cs)}
 .card.drag .face,.card.drag .back{box-shadow:0 12px 24px var(--shadow)}
 .card:not(.up) .face{display:none}
 .card.up .back{display:none}
-.court .face{background:linear-gradient(172deg,#fff8e6,#f7e7bf 60%,#ecd29a);box-shadow:inset 0 0 0 calc(var(--cw)*.035) #e0b23b,0 1px 3px var(--shadow)}
-.ace .face{background:radial-gradient(circle at 50% 62%,#fff1c4,var(--card) 62%)}
+.court .face{background:var(--court-bg);box-shadow:inset 0 0 0 calc(var(--cw)*.035) #e0b23b,0 1px 3px var(--shadow)}
+.no-frame .court .face{box-shadow:0 1px 3px var(--shadow)}
+.ace .face{background:var(--ace-bg)}
 .corner{
-  position:absolute;top:3.5%;left:7%;right:7%;display:flex;justify-content:space-between;align-items:baseline;
-  font-family:var(--f-display);font-size:calc(var(--cw)*.27);line-height:1;letter-spacing:-.02em;
+  position:absolute;z-index:2;top:3.5%;left:7%;right:7%;display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--corner-font);font-weight:500;font-size:calc(var(--cw)*.27*var(--corner-scale));line-height:1;letter-spacing:-.02em;
 }
 .corner i{font-style:normal}
 .corner .mini{font-size:.78em}
-.red .corner{color:var(--red)}
-.black .corner{color:var(--ink)}
+.corner.plate{left:4%;top:3%;right:auto;background:var(--plate);padding:.12em .18em .14em;border-radius:.22em}
+.corner.plate .mini{display:none}
 .art{position:absolute;left:3%;top:21%;width:94%;height:77%}
+.pic{position:absolute;background-repeat:no-repeat;background-position:center}
+.pic.area-below{left:5%;right:5%;top:22%;bottom:4%;border-radius:calc(var(--cw)*.04)}
+.pic.area-full{inset:0}
+.pic.fit-cover{background-size:cover}
+.pic.fit-contain{background-size:contain}
+.pic.focus-top{background-position:center top}
+.pic.focus-bottom{background-position:center bottom}
+.pips{position:absolute;left:14%;right:14%;top:26%;bottom:7%}
+.pips i{position:absolute;transform:translate(-50%,-50%);font-style:normal;font-size:calc(var(--cw)*.21);line-height:1}
+.pips i.flip{transform:translate(-50%,-50%) rotate(180deg)}
+.big{position:absolute;left:0;right:0;top:20%;bottom:4%;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.big i{font-style:normal}
+.big .ace-pip{font-size:calc(var(--cw)*.72)}
+.court-box{left:16%;right:16%;top:27%;bottom:8%;border:1.5px solid currentColor;border-radius:calc(var(--cw)*.05);gap:calc(var(--cw)*.04)}
+.court-box b{font-family:var(--corner-font);font-weight:500;font-size:calc(var(--cw)*.42)}
+.court-box i{font-size:calc(var(--cw)*.26)}
 .back{
-  background-color:var(--back);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg fill='%23d9963a' opacity='.5' transform='rotate(-35 12 12)'%3E%3Crect x='4.5' y='8' width='3' height='8' rx='1'/%3E%3Crect x='16.5' y='8' width='3' height='8' rx='1'/%3E%3Crect x='2.5' y='9.5' width='2' height='5' rx='.8'/%3E%3Crect x='19.5' y='9.5' width='2' height='5' rx='.8'/%3E%3Crect x='7.5' y='11' width='9' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-color:var(--back-color);
+  background-image:var(--back-img);
   background-size:calc(var(--cw)*.34) calc(var(--cw)*.34);
-  border:calc(var(--cw)*.045) solid var(--card);
+  background-position:center;
+  border:calc(var(--cw)*.045) solid #fbf6ec;
   box-shadow:inset 0 0 0 1px rgba(244,196,110,.55),0 1px 3px var(--shadow);
 }
+.back-photo .back{background-size:cover}
 .card.shake .face{animation:shake .32s}
 @keyframes shake{20%{translate:-4px 0}50%{translate:4px 0}80%{translate:-2px 0}}
 
@@ -113,6 +132,55 @@ button:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
 .win-box p{margin:0 0 20px;line-height:1.5;color:var(--chalk)}
 .flex-rain{position:absolute;top:-40px;font-size:28px;animation:fall linear forwards;z-index:1}
 @keyframes fall{to{transform:translateY(calc(100vh + 80px)) rotate(540deg)}}
+
+/* панель колоды */
+#panel{position:fixed;inset:0;z-index:4000;display:flex;justify-content:flex-end;background:rgba(8,10,9,.55)}
+.sheet{
+  width:min(460px,100%);height:100%;display:flex;flex-direction:column;
+  background:var(--floor-hi);border-left:1px solid var(--slot-line);box-shadow:-12px 0 30px rgba(0,0,0,.4);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px);
+}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px}
+.sheet-head h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:22px}
+.close{font-size:20px;line-height:1;padding:6px 11px}
+.preview{
+  --cw:min(62px,calc((min(460px,100vw) - 64px)/5));
+  display:flex;gap:8px;padding:4px 16px 14px;justify-content:center;
+}
+.preview .card{position:relative;flex:none;transform:none;cursor:default;transition:none}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--slot-line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:11px 9px;white-space:nowrap;color:var(--muted)}
+.tab:hover{border-color:var(--slot-line)}
+.tab[aria-selected="true"]{border-color:var(--bronze);color:var(--bronze-hi)}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:20px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{padding:8px 10px}
+.seg button[aria-pressed="true"]{background:var(--bronze);color:var(--ink);border-color:transparent}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.row label{display:flex;align-items:center;gap:8px;font-size:13px}
+input[type=color]{width:38px;height:30px;padding:0;border:1px solid var(--slot-line);border-radius:6px;background:none;cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--bronze)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--bronze)}
+.note{font-size:12px;line-height:1.45;color:var(--muted);margin:0}
+.drop{
+  border:1.5px dashed var(--slot-line);border-radius:10px;padding:16px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;color:var(--muted)
+}
+.drop.over{border-color:var(--bronze);background:rgba(217,150,58,.08)}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.thumb{position:relative;aspect-ratio:5/7}
+.thumb .pick{position:absolute;inset:0;padding:0;border-radius:6px;background:#111 center/cover no-repeat}
+.thumb .del{position:absolute;top:-6px;right:-6px;width:22px;height:22px;padding:0;border-radius:50%;font-size:13px;display:grid;place-items:center}
+.chips{display:grid;grid-template-columns:22px repeat(13,minmax(0,1fr));gap:3px;align-items:center}
+.chips .suitpick{padding:0;height:24px;font-size:15px;border-radius:4px}
+.chip{aspect-ratio:5/7;padding:0;border-radius:3px;background:#f3ecdc center/cover no-repeat;color:var(--ink);font:500 9px/1 var(--f-body);border:1px solid transparent}
+.chip.r{color:#c8142f}
+.chip.on{outline:2px solid var(--bronze-hi);outline-offset:1px}
+.chip.has{color:transparent}
+.sheet-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--slot-line)}
+
 @media (prefers-reduced-motion:reduce){
   .card{transition:none}
   .card.shake .face{animation:none}
@@ -125,13 +193,15 @@ button:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
   <h1 class="brand">Масляная <em>косынка</em></h1>
   <div class="stats" aria-live="polite"><span>Ходы: <b id="moves">0</b></span><span>Время: <b id="time">0:00</b></span></div>
   <div class="controls">
+    <button id="btnSkin" type="button">Колода</button>
     <button id="btnDraw" type="button">По 1 карте</button>
     <button id="btnUndo" type="button" disabled>Отменить</button>
     <button id="btnNew" type="button" class="primary">Новая раздача</button>
   </div>
 </header>
-<p class="hint">Тап по карте отправляет её на лучшее место. Стопки можно перетаскивать. Колоду листай тапом. Ctrl+Z отменяет ход.</p>
+<p class="hint">Тап по карте отправляет её на лучшее место. Стопки можно перетаскивать. Колоду листай тапом. Ctrl+Z отменяет ход. В «Колоде» меняются рисунки, рубашка и стол.</p>
 <main id="board" aria-label="Игровой стол"></main>
+
 <div id="win" hidden>
   <div class="win-box">
     <h2>Сет закрыт!</h2>
@@ -140,12 +210,258 @@ button:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
   </div>
 </div>
 
+<div id="panel" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+    <div class="sheet-head">
+      <h2 id="panelTitle">Колода</h2>
+      <button id="btnClose" type="button" class="close" aria-label="Закрыть">×</button>
+    </div>
+    <div class="preview" id="preview"></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button" role="tab" data-tab="faces" aria-selected="true">Карты</button>
+      <button class="tab" type="button" role="tab" data-tab="pics" aria-selected="false">Свои картинки</button>
+      <button class="tab" type="button" role="tab" data-tab="back" aria-selected="false">Рубашка</button>
+      <button class="tab" type="button" role="tab" data-tab="table" aria-selected="false">Стол</button>
+    </div>
+    <div class="sheet-body">
+      <div data-pane="faces" class="field-group" style="display:contents">
+        <div class="field"><span class="lab">Рисунок</span><div class="seg" data-seg="art"></div></div>
+        <div class="field" data-show="art=custom"><span class="lab">Если у карты нет своей картинки</span><div class="seg" data-seg="fallback"></div></div>
+        <div class="field"><span class="lab">Лицо карты</span><div class="seg" data-seg="face"></div></div>
+        <div class="field"><span class="lab">Масти</span><div class="seg" data-seg="suitColors"></div>
+          <div class="row">
+            <label><input type="color" id="c-red" data-key="red"> Красные</label>
+            <label><input type="color" id="c-black" data-key="black"> Чёрные</label>
+          </div>
+        </div>
+        <div class="field"><span class="lab">Шрифт индекса</span><div class="seg" data-seg="font"></div></div>
+        <div class="field"><label class="lab" for="r-corner">Размер индекса</label><input type="range" id="r-corner" data-key="cornerScale" min="0.7" max="1.4" step="0.05"></div>
+        <div class="field"><label class="lab" for="r-radius">Скругление углов</label><input type="range" id="r-radius" data-key="radius" min="0" max="20" step="1"></div>
+        <div class="row"><label><input type="checkbox" id="k-frame" data-key="courtFrame"> Золотая рамка у J, Q, K</label></div>
+      </div>
+
+      <div data-pane="pics" style="display:contents" hidden>
+        <div class="drop" id="drop">
+          Перетащи сюда картинки или
+          <button type="button" class="primary" id="btnAddPics">Выбрать картинки</button>
+          <input type="file" id="fileLib" accept="image/*" multiple hidden>
+        </div>
+        <p class="note" id="libNote">Картинки хранятся только в этом браузере и никуда не отправляются.</p>
+        <div class="field" id="libField"><span class="lab">Библиотека</span><div class="lib" id="lib"></div></div>
+        <div class="field"><span class="lab">Разложить по колоде</span>
+          <div class="seg">
+            <button type="button" data-deal="order">По порядку</button>
+            <button type="button" data-deal="shuffle">Вперемешку</button>
+            <button type="button" data-deal="rank">По рангам</button>
+            <button type="button" data-deal="suit">По мастям</button>
+            <button type="button" data-deal="clear">Убрать со всех</button>
+          </div>
+        </div>
+        <div class="field"><span class="lab">Карты по одной</span>
+          <p class="note" id="selNote">Отметь карты, потом нажми на картинку в библиотеке. Значок масти слева выделяет всю масть.</p>
+          <div class="chips" id="chips"></div>
+          <div class="seg">
+            <button type="button" id="selAll">Выбрать все</button>
+            <button type="button" id="selNone">Снять выбор</button>
+            <button type="button" id="selClear">Убрать картинку у выбранных</button>
+          </div>
+        </div>
+        <div class="field"><span class="lab">Как вписать</span><div class="seg" data-seg="fit"></div></div>
+        <div class="field"><span class="lab">Где на карте</span><div class="seg" data-seg="area"></div></div>
+        <div class="field"><span class="lab">Какую часть показывать</span><div class="seg" data-seg="focus"></div></div>
+      </div>
+
+      <div data-pane="back" style="display:contents" hidden>
+        <div class="field"><span class="lab">Узор</span><div class="seg" data-seg="back"></div></div>
+        <div class="row" data-show="back!=image">
+          <label><input type="color" id="c-backColor" data-key="backColor"> Фон</label>
+          <label data-show="back!=plain"><input type="color" id="c-backInk" data-key="backInk"> Узор</label>
+        </div>
+        <div class="field">
+          <button type="button" id="btnBackPic">Загрузить картинку для рубашки</button>
+          <input type="file" id="fileBack" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <div data-pane="table" style="display:contents" hidden>
+        <div class="field"><span class="lab">Покрытие</span><div class="seg" data-seg="table"></div></div>
+        <div class="row" data-show="table=color"><label><input type="color" id="c-table" data-key="tableColor"> Цвет стола</label></div>
+        <div class="field">
+          <button type="button" id="btnTablePic">Загрузить картинку для стола</button>
+          <input type="file" id="fileTable" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" id="btnReset">Сбросить оформление</button>
+      <button type="button" class="primary" id="btnDone">Готово</button>
+    </div>
+  </section>
+</div>
+
 <script>
 (() => {
 const SUIT_CH = ['♥','♦','♠','♣'].map(s => s + '︎');
 const SUIT_NAME = ['черви','бубны','пики','трефы'];
 const RED = [true, true, false, false];
 const RANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const $ = id => document.getElementById(id);
+
+/* ---------- Оформление ---------- */
+const defaults = () => ({
+  art: 'buff', fallback: 'buff', face: 'cream', suitColors: 'two', red: '#c8142f', black: '#17191b',
+  font: 'russo', cornerScale: 1, radius: 8, courtFrame: true,
+  fit: 'cover', area: 'below', focus: 'center',
+  back: 'dumbbell', backColor: '#5a1a20', backInk: '#d9963a', backImage: null,
+  table: 'rubber', tableColor: '#2b4a3a', tableImage: null,
+  assign: {},
+});
+let skin = defaults();
+try { Object.assign(skin, JSON.parse(localStorage.getItem('kosynka-skin') || '{}')); } catch (e) {}
+if (!skin.assign || typeof skin.assign !== 'object') skin.assign = {};
+const saveSkin = () => { try { localStorage.setItem('kosynka-skin', JSON.stringify(skin)); } catch (e) {} };
+
+const SEGS = {
+  art: [['buff','Качки'],['classic','Классика'],['custom','Свои картинки']],
+  fallback: [['buff','Качок'],['classic','Классика']],
+  face: [['cream','Кремовое'],['white','Белое'],['vintage','Старая бумага'],['dark','Тёмное']],
+  suitColors: [['two','Две краски'],['four','Четыре краски']],
+  font: [['russo','Рубленый'],['rubik','Обычный'],['serif','С засечками'],['mono','Моноширинный']],
+  fit: [['cover','Заполнить'],['contain','Целиком']],
+  area: [['below','Под индексом'],['full','На всю карту']],
+  focus: [['top','Верх'],['center','Центр'],['bottom','Низ']],
+  back: [['dumbbell','Гантели'],['stripes','Полосы'],['dots','Горошек'],['checks','Клетка'],['plain','Без узора'],['image','Картинка']],
+  table: [['rubber','Резина зала'],['felt','Зелёное сукно'],['blue','Синее сукно'],['wood','Дерево'],['dark','Тёмный'],['color','Свой цвет'],['image','Картинка']],
+};
+const FACES = {
+  cream: { bg: 'linear-gradient(172deg,#fffdf8,#fbf6ec 55%,#efe4cd)', court: 'linear-gradient(172deg,#fff8e6,#f7e7bf 60%,#ecd29a)', ace: 'radial-gradient(circle at 50% 62%,#fff1c4,#fbf6ec 62%)', edge: '#d8cbb2', plate: 'rgba(251,246,236,.88)' },
+  white: { bg: '#ffffff', court: 'linear-gradient(172deg,#ffffff,#f1f1f1)', ace: '#ffffff', edge: '#cfcfcf', plate: 'rgba(255,255,255,.9)' },
+  vintage: { bg: 'linear-gradient(172deg,#f3e6c8,#e8d4a8 60%,#dcc08c)', court: 'linear-gradient(172deg,#f0dcae,#e2c68c)', ace: 'radial-gradient(circle at 50% 62%,#f7e3b0,#e8d4a8 62%)', edge: '#b89a62', plate: 'rgba(240,226,190,.9)' },
+  dark: { bg: 'linear-gradient(172deg,#2b3034,#1f2326)', court: 'linear-gradient(172deg,#3a3326,#262119)', ace: 'radial-gradient(circle at 50% 62%,#3d3626,#22262a 62%)', edge: '#41474d', plate: 'rgba(31,35,38,.88)', dark: true },
+};
+const FONTS = {
+  russo: 'var(--f-display)',
+  rubik: '"Rubik",system-ui,sans-serif',
+  serif: 'Georgia,"Times New Roman",serif',
+  mono: 'ui-monospace,"SF Mono",Menlo,Consolas,monospace',
+};
+const TABLES = {
+  rubber: 'radial-gradient(rgba(241,236,226,.035) 1px,transparent 1.3px) 0 0/7px 7px,radial-gradient(rgba(0,0,0,.28) 1px,transparent 1.3px) 3px 5px/11px 11px,#1b201e',
+  felt: 'radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px) 0 0/5px 5px,radial-gradient(ellipse at 50% 15%,#2f7a4b,#15422a 70%),#15422a',
+  blue: 'radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px) 0 0/5px 5px,radial-gradient(ellipse at 50% 15%,#2a5f8f,#102c47 70%),#102c47',
+  wood: 'repeating-linear-gradient(90deg,rgba(0,0,0,.14) 0 2px,transparent 2px 41px),repeating-linear-gradient(90deg,#5a3a22 0 70px,#654229 70px 130px,#553620 130px 180px),#5a3a22',
+  dark: '#111316',
+};
+const lum = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+
+function backPattern(kind, ink) {
+  const body = {
+    dumbbell: `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g fill='${ink}' opacity='.5' transform='rotate(-35 12 12)'><rect x='4.5' y='8' width='3' height='8' rx='1'/><rect x='16.5' y='8' width='3' height='8' rx='1'/><rect x='2.5' y='9.5' width='2' height='5' rx='.8'/><rect x='19.5' y='9.5' width='2' height='5' rx='.8'/><rect x='7.5' y='11' width='9' height='2'/></g></svg>`,
+    stripes: `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M-3 3L3-3M0 12L12 0M9 15L15 9' stroke='${ink}' stroke-width='2.4' opacity='.5'/></svg>`,
+    dots: `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><circle cx='3' cy='3' r='1.7' fill='${ink}' opacity='.55'/><circle cx='9' cy='9' r='1.7' fill='${ink}' opacity='.55'/></svg>`,
+    checks: `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M0 0h6v6H0zM6 6h6v6H6z' fill='${ink}' opacity='.4'/></svg>`,
+  }[kind];
+  return body ? `url("data:image/svg+xml,${encodeURIComponent(body)}")` : 'none';
+}
+
+/* ---------- Картинки пользователя (IndexedDB) ---------- */
+const imgs = [];
+const imgById = new Map();
+let dbOk = false;
+const DB = {
+  db: null,
+  open() {
+    return new Promise(res => {
+      try {
+        const r = indexedDB.open('kosynka', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('images', { keyPath: 'id' });
+        r.onsuccess = () => { this.db = r.result; res(true); };
+        r.onerror = () => res(false);
+        r.onblocked = () => res(false);
+      } catch (e) { res(false); }
+    });
+  },
+  all() {
+    return new Promise(res => {
+      if (!this.db) return res([]);
+      try { const q = this.db.transaction('images').objectStore('images').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }
+      catch (e) { res([]); }
+    });
+  },
+  put(rec) { try { this.db && this.db.transaction('images', 'readwrite').objectStore('images').put(rec); } catch (e) {} },
+  del(id) { try { this.db && this.db.transaction('images', 'readwrite').objectStore('images').delete(id); } catch (e) {} },
+};
+
+function addImg(rec) {
+  const img = { id: rec.id, name: rec.name, url: URL.createObjectURL(rec.blob) };
+  imgs.push(img);
+  imgById.set(img.id, img);
+}
+
+function prepare(file) {
+  return new Promise(res => {
+    const src = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 720 / Math.max(im.naturalWidth, im.naturalHeight));
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(im.naturalWidth * k));
+      cv.height = Math.max(1, Math.round(im.naturalHeight * k));
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(src);
+      cv.toBlob(blob => res(blob ? { id: 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), name: file.name, blob } : null), 'image/webp', 0.86);
+    };
+    im.onerror = () => { URL.revokeObjectURL(src); res(null); };
+    im.src = src;
+  });
+}
+
+async function addFiles(files, purpose) {
+  const list = [...files].filter(f => f.type.startsWith('image/'));
+  let last = null, failed = 0;
+  for (const f of list) {
+    const rec = await prepare(f);
+    if (!rec) { failed++; continue; }
+    DB.put(rec);
+    addImg(rec);
+    last = rec.id;
+  }
+  if (last && purpose === 'back') { skin.back = 'image'; skin.backImage = last; }
+  if (last && purpose === 'table') { skin.table = 'image'; skin.tableImage = last; }
+  if (last && purpose === 'lib' && !Object.keys(skin.assign).length) { dealImages('order'); }
+  libMessage(failed ? `Не получилось открыть файлов: ${failed}. Подойдут JPG, PNG, WebP и GIF.` : null);
+  commit();
+}
+
+function removeImg(id) {
+  const img = imgById.get(id);
+  if (!img) return;
+  URL.revokeObjectURL(img.url);
+  imgs.splice(imgs.indexOf(img), 1);
+  imgById.delete(id);
+  DB.del(id);
+  for (const k of Object.keys(skin.assign)) if (skin.assign[k] === id) delete skin.assign[k];
+  if (skin.backImage === id) skin.backImage = null;
+  if (skin.tableImage === id) skin.tableImage = null;
+  commit();
+}
+
+function dealImages(mode) {
+  skin.assign = {};
+  if (mode !== 'clear' && imgs.length) {
+    const n = imgs.length;
+    let pool = [];
+    if (mode === 'shuffle') { while (pool.length < 52) pool.push(...shuffle(imgs.map(i => i.id))); pool = shuffle(pool.slice(0, 52)); }
+    for (let id = 0; id < 52; id++) {
+      const suit = Math.floor(id / 13), rank = id % 13 + 1;
+      skin.assign[id] = mode === 'shuffle' ? pool[id]
+        : mode === 'rank' ? imgs[(rank - 1) % n].id
+        : mode === 'suit' ? imgs[suit % n].id
+        : imgs[id % n].id;
+    }
+    skin.art = 'custom';
+  }
+}
 
 /* ---------- Качки ---------- */
 const SKINS = [['#efc39b','#b98257'],['#d99a62','#9a6136'],['#b97644','#7a4520'],['#8a5430','#55301a'],['#e6ae7c','#a8703f'],['#c4834f','#87512a']];
@@ -220,7 +536,7 @@ function figure(suit, rank) {
   const red = RED[suit];
   const trunks = ['#d3203a','#e2557a','#1e2230','#24402f'][suit];
   const accent = red ? '#d3203a' : '#2b5fd9';
-  let s = `<text x="50" y="96" font-size="100" text-anchor="middle" fill="${red ? '#c8142f' : '#17191b'}" opacity=".08" font-family="serif">${SUIT_CH[suit]}</text>`;
+  let s = `<text x="50" y="96" font-size="100" text-anchor="middle" fill="currentColor" opacity=".08" font-family="serif">${SUIT_CH[suit]}</text>`;
   s += L.gold
     ? star(10,30,5,'#e2b43c') + star(89,22,4,'#e2b43c') + star(91,82,3.2,'#e2b43c') + star(8,88,3,'#e2b43c')
     : star(9,76,2.6,'#d9963a') + star(91,66,2.2,'#d9963a');
@@ -244,9 +560,47 @@ function figure(suit, rank) {
   return `<svg class="art" viewBox="0 -8 100 122" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${s}</svg>`;
 }
 
+/* ---------- Классические карты ---------- */
+const PIPS = {
+  2:[[50,10],[50,90]],
+  3:[[50,10],[50,50],[50,90]],
+  4:[[25,10],[75,10],[25,90],[75,90]],
+  5:[[25,10],[75,10],[50,50],[25,90],[75,90]],
+  6:[[25,10],[75,10],[25,50],[75,50],[25,90],[75,90]],
+  7:[[25,10],[75,10],[50,30],[25,50],[75,50],[25,90],[75,90]],
+  8:[[25,10],[75,10],[50,30],[25,50],[75,50],[50,70],[25,90],[75,90]],
+  9:[[25,10],[75,10],[25,36.7],[75,36.7],[50,50],[25,63.3],[75,63.3],[25,90],[75,90]],
+  10:[[25,10],[75,10],[50,23],[25,36.7],[75,36.7],[25,63.3],[75,63.3],[50,77],[25,90],[75,90]],
+};
+function classic(suit, rank) {
+  const sym = SUIT_CH[suit];
+  if (rank === 1) return `<div class="big"><i class="ace-pip">${sym}</i></div>`;
+  if (rank > 10) return `<div class="big court-box"><b>${RANKS[rank]}</b><i>${sym}</i></div>`;
+  return `<div class="pips">${PIPS[rank].map(([x, y]) => `<i style="left:${x}%;top:${y}%"${y > 50 ? ' class="flip"' : ''}>${sym}</i>`).join('')}</div>`;
+}
+
+function faceInner(suit, rank) {
+  const sym = SUIT_CH[suit];
+  const corner = plate => `<div class="corner${plate ? ' plate' : ''}"><span>${RANKS[rank]}<i>${sym}</i></span><i class="mini">${sym}</i></div>`;
+  let mode = skin.art;
+  if (mode === 'custom') {
+    const img = imgById.get(skin.assign[suit * 13 + rank - 1]);
+    if (img) return `<div class="pic fit-${skin.fit} area-${skin.area} focus-${skin.focus}" style="background-image:url('${img.url}')"></div>` + corner(skin.area === 'full');
+    mode = skin.fallback;
+  }
+  return corner(false) + (mode === 'classic' ? classic(suit, rank) : figure(suit, rank));
+}
+
+function makeCardEl(suit, rank) {
+  const el = document.createElement('div');
+  el.className = `card s${suit}` + (rank > 10 ? ' court' : '') + (rank === 1 ? ' ace' : '');
+  el.setAttribute('aria-label', `${RANKS[rank]} ${SUIT_NAME[suit]}`);
+  el.innerHTML = '<div class="face"></div><div class="back"></div>';
+  return el;
+}
+
 /* ---------- Игра ---------- */
-const board = document.getElementById('board');
-const $ = id => document.getElementById(id);
+const board = $('board');
 const cards = [];
 let S = null, history = [], moves = 0, elapsed = 0, timerStart = 0, timerOn = false, won = false, autoRunning = false;
 let drawMode = 1, cw = 0, ch = 0, gap = 0, tabY = 0, drag = null;
@@ -263,11 +617,8 @@ const tabSlots = [0,1,2,3,4,5,6].map(() => slot('slot-tab', 'K'));
 
 for (let suit = 0; suit < 4; suit++) for (let rank = 1; rank <= 13; rank++) {
   const id = suit * 13 + rank - 1;
-  const el = document.createElement('div');
-  el.className = 'card ' + (RED[suit] ? 'red' : 'black') + (rank > 10 ? ' court' : '') + (rank === 1 ? ' ace' : '');
+  const el = makeCardEl(suit, rank);
   el.dataset.id = id;
-  el.setAttribute('aria-label', `${RANKS[rank]} ${SUIT_NAME[suit]}`);
-  el.innerHTML = `<div class="face"><div class="corner"><span>${RANKS[rank]}<i>${SUIT_CH[suit]}</i></span><i class="mini">${SUIT_CH[suit]}</i></div>${figure(suit, rank)}</div><div class="back"></div>`;
   board.appendChild(el);
   cards.push({ id, suit, rank, up: false, el, x: 0, y: 0, z: 0 });
 }
@@ -545,7 +896,8 @@ function checkWin() {
 }
 
 function showWin() {
-  $('winText').textContent = `Все 52 качка стоят на пьедесталах. Время ${fmt(elapsed)}, ходов ${moves}.`;
+  const who = skin.art === 'buff' ? 'Все 52 качка стоят на пьедесталах.' : 'Все 52 карты разложены по мастям.';
+  $('winText').textContent = `${who} Время ${fmt(elapsed)}, ходов ${moves}.`;
   const w = $('win');
   w.hidden = false;
   w.querySelectorAll('.flex-rain').forEach(n => n.remove());
@@ -572,6 +924,186 @@ function updateHud() {
 }
 setInterval(() => { if (timerOn) { elapsed = Date.now() - timerStart; $('time').textContent = fmt(elapsed); } }, 1000);
 
+/* ---------- Применение оформления ---------- */
+const PREVIEW_IDS = [0, 32, 24, 51];
+const previewEls = PREVIEW_IDS.map(id => {
+  const el = makeCardEl(Math.floor(id / 13), id % 13 + 1);
+  el.classList.add('up');
+  $('preview').appendChild(el);
+  return el;
+});
+const previewBack = makeCardEl(0, 2);
+previewBack.removeAttribute('aria-label');
+$('preview').appendChild(previewBack);
+
+function applySkin() {
+  const root = document.documentElement, st = root.style, f = FACES[skin.face] || FACES.cream;
+  st.setProperty('--face-bg', f.bg);
+  st.setProperty('--court-bg', f.court);
+  st.setProperty('--ace-bg', f.ace);
+  st.setProperty('--face-edge', f.edge);
+  st.setProperty('--plate', f.plate);
+  const four = skin.suitColors === 'four';
+  const black = f.dark && lum(skin.black) < 0.45 ? '#eceae2' : skin.black;
+  st.setProperty('--c0', skin.red);
+  st.setProperty('--c1', four ? (f.dark ? '#5b8ff0' : '#1f5fd1') : skin.red);
+  st.setProperty('--c2', black);
+  st.setProperty('--c3', four ? (f.dark ? '#3fbf6a' : '#16823a') : black);
+  st.setProperty('--corner-font', FONTS[skin.font] || FONTS.russo);
+  st.setProperty('--corner-scale', skin.cornerScale);
+  st.setProperty('--r', skin.radius / 100);
+  root.classList.toggle('no-frame', !skin.courtFrame);
+
+  const backImg = skin.back === 'image' && imgById.get(skin.backImage);
+  root.classList.toggle('back-photo', !!backImg);
+  st.setProperty('--back-color', skin.backColor);
+  st.setProperty('--back-img', backImg ? `url('${backImg.url}')` : skin.back === 'image' ? 'none' : backPattern(skin.back, skin.backInk));
+
+  const tableImg = skin.table === 'image' && imgById.get(skin.tableImage);
+  const bg = tableImg ? `#111316 url('${tableImg.url}') center/cover no-repeat`
+    : skin.table === 'color' ? skin.tableColor
+    : TABLES[skin.table] || TABLES.rubber;
+  root.style.background = bg;
+  document.body.style.background = bg;
+
+  cards.forEach(c => { c.el.querySelector('.face').innerHTML = faceInner(c.suit, c.rank); });
+  previewEls.forEach((el, i) => { const id = PREVIEW_IDS[i]; el.querySelector('.face').innerHTML = faceInner(Math.floor(id / 13), id % 13 + 1); });
+}
+
+/* ---------- Панель ---------- */
+const selected = new Set();
+let libMsg = null;
+function libMessage(m) { libMsg = m; }
+
+document.querySelectorAll('[data-seg]').forEach(box => {
+  const key = box.dataset.seg;
+  box.innerHTML = SEGS[key].map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const v = b.dataset.v;
+    if (key === 'back' && v === 'image' && !imgById.get(skin.backImage)) { $('fileBack').click(); return; }
+    if (key === 'table' && v === 'image' && !imgById.get(skin.tableImage)) { $('fileTable').click(); return; }
+    skin[key] = v;
+    commit();
+  });
+});
+document.querySelectorAll('[data-key]').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const k = inp.dataset.key;
+    skin[k] = inp.type === 'checkbox' ? inp.checked : inp.type === 'range' ? +inp.value : inp.value;
+    commit();
+  });
+});
+
+function syncUI() {
+  document.querySelectorAll('[data-seg]').forEach(box => {
+    box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(skin[box.dataset.seg] === b.dataset.v)));
+  });
+  document.querySelectorAll('[data-key]').forEach(inp => {
+    const v = skin[inp.dataset.key];
+    if (inp.type === 'checkbox') inp.checked = !!v; else if (document.activeElement !== inp) inp.value = v;
+  });
+  document.querySelectorAll('[data-show]').forEach(el => {
+    const [, k, op, v] = el.dataset.show.match(/^(\w+)(!?=)(\w+)$/);
+    el.hidden = op === '=' ? skin[k] !== v : skin[k] === v;
+  });
+  renderLib();
+  renderChips();
+}
+
+function renderLib() {
+  $('libField').hidden = !imgs.length;
+  $('lib').innerHTML = imgs.map(i => `<div class="thumb"><button type="button" class="pick" data-img="${i.id}" style="background-image:url('${i.url}')" aria-label="Поставить ${i.name.replace(/"/g, '')} на выбранные карты"></button><button type="button" class="del" data-del="${i.id}" aria-label="Удалить картинку">×</button></div>`).join('');
+  const notes = [];
+  if (libMsg) notes.push(libMsg);
+  notes.push(dbOk ? 'Картинки хранятся только в этом браузере и никуда не отправляются.' : 'Браузер не дал сохранить картинки: после перезагрузки их придётся добавить заново.');
+  $('libNote').textContent = notes.join(' ');
+  $('selNote').textContent = selected.size
+    ? `Выбрано карт: ${selected.size}. Нажми на картинку в библиотеке, чтобы поставить её на них.`
+    : 'Отметь карты, потом нажми на картинку в библиотеке. Значок масти слева выделяет всю масть.';
+}
+
+function renderChips() {
+  let h = '';
+  for (let s = 0; s < 4; s++) {
+    h += `<button type="button" class="suitpick" data-suit="${s}" style="color:${RED[s] ? '#e0475e' : 'var(--chalk)'}" aria-label="Выделить всю масть ${SUIT_NAME[s]}">${SUIT_CH[s]}</button>`;
+    for (let r = 1; r <= 13; r++) {
+      const id = s * 13 + r - 1;
+      const img = imgById.get(skin.assign[id]);
+      h += `<button type="button" class="chip${RED[s] ? ' r' : ''}${img ? ' has' : ''}${selected.has(id) ? ' on' : ''}" data-chip="${id}"${img ? ` style="background-image:url('${img.url}')"` : ''} aria-pressed="${selected.has(id)}" aria-label="${RANKS[r]} ${SUIT_NAME[s]}">${RANKS[r]}</button>`;
+    }
+  }
+  $('chips').innerHTML = h;
+}
+
+function commit() {
+  saveSkin();
+  applySkin();
+  syncUI();
+}
+
+$('lib').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) { removeImg(del.dataset.del); return; }
+  const pick = e.target.closest('[data-img]');
+  if (!pick) return;
+  if (!selected.size) { libMessage('Сначала отметь карты в сетке ниже.'); syncUI(); libMessage(null); return; }
+  selected.forEach(id => { skin.assign[id] = pick.dataset.img; });
+  skin.art = 'custom';
+  libMessage(null);
+  commit();
+});
+$('chips').addEventListener('click', e => {
+  const sp = e.target.closest('[data-suit]');
+  if (sp) {
+    const ids = Array.from({ length: 13 }, (_, r) => +sp.dataset.suit * 13 + r);
+    const all = ids.every(id => selected.has(id));
+    ids.forEach(id => all ? selected.delete(id) : selected.add(id));
+    syncUI();
+    return;
+  }
+  const chip = e.target.closest('[data-chip]');
+  if (!chip) return;
+  const id = +chip.dataset.chip;
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  syncUI();
+});
+$('selAll').addEventListener('click', () => { for (let i = 0; i < 52; i++) selected.add(i); syncUI(); });
+$('selNone').addEventListener('click', () => { selected.clear(); syncUI(); });
+$('selClear').addEventListener('click', () => { selected.forEach(id => { delete skin.assign[id]; }); commit(); });
+document.querySelectorAll('[data-deal]').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.deal !== 'clear' && !imgs.length) { libMessage('Сначала добавь картинки.'); syncUI(); libMessage(null); return; }
+  dealImages(b.dataset.deal);
+  commit();
+}));
+
+$('btnAddPics').addEventListener('click', () => $('fileLib').click());
+$('btnBackPic').addEventListener('click', () => $('fileBack').click());
+$('btnTablePic').addEventListener('click', () => $('fileTable').click());
+const onFile = (inp, purpose) => inp.addEventListener('change', () => { if (inp.files.length) addFiles(inp.files, purpose); inp.value = ''; });
+onFile($('fileLib'), 'lib');
+onFile($('fileBack'), 'back');
+onFile($('fileTable'), 'table');
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
+drop.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files, 'lib'); });
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== name; });
+}
+function openPanel() { syncUI(); $('panel').hidden = false; $('btnClose').focus(); }
+function closePanel() { $('panel').hidden = true; selected.clear(); $('btnSkin').focus(); relayout(); }
+$('btnSkin').addEventListener('click', openPanel);
+$('btnClose').addEventListener('click', closePanel);
+$('btnDone').addEventListener('click', closePanel);
+$('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
+$('btnReset').addEventListener('click', () => { skin = defaults(); commit(); });
+
+/* ---------- Запуск ---------- */
 $('btnNew').addEventListener('click', newGame);
 $('btnAgain').addEventListener('click', newGame);
 $('btnUndo').addEventListener('click', undo);
@@ -582,11 +1114,20 @@ $('btnDraw').addEventListener('click', () => {
   updateHud();
 });
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  if (e.key === 'Escape' && !$('panel').hidden) { closePanel(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && $('panel').hidden) { e.preventDefault(); undo(); }
 });
-const relayout = () => { if (!S) return; board.classList.add('instant'); layout(); requestAnimationFrame(() => board.classList.remove('instant')); };
+function relayout() { if (!S) return; board.classList.add('instant'); layout(); requestAnimationFrame(() => board.classList.remove('instant')); }
 window.addEventListener('resize', relayout);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+
+applySkin();
+DB.open().then(async ok => {
+  dbOk = ok;
+  (await DB.all()).forEach(addImg);
+  applySkin();
+  if (!$('panel').hidden) syncUI();
+});
 
 window.claude?.hot?.snapshot?.(() => ({ S, up: cards.map(c => c.up ? 1 : 0), moves, elapsed, won }));
 function start(data) {
