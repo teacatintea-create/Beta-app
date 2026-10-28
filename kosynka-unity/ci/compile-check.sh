@@ -13,6 +13,8 @@ fetch() { # id version dir
   local nupkg="$WORK/refs/$1.$2.nupkg"
   [ -f "$nupkg" ] || curl -fsSL -o "$nupkg" "https://api.nuget.org/v3-flatcontainer/$1/$2/$1.$2.nupkg"
   rm -rf "$3" && unzip -q -o "$nupkg" -d "$3"
+  chmod -R u+rwX "$3" # в архивах NuGet у файлов нет прав на чтение
+
 }
 # Ближайшие к 2022.3 сборки, что есть на NuGet; API, которым пользуется игра, с тех пор не менялся
 fetch unityengine.modules 2021.3.33 "$WORK/refs/engine"
