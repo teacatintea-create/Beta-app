@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ "main", "master", "claude/**" ]
-    paths-ignore: [ "apk/**", "**.md" ]
+    paths-ignore: [ "apk/**", "**.md", "RetroSkin/**", ".github/workflows/build-retroskin.yml" ]
   workflow_dispatch:
 
 permissions:

@@ -56,3 +56,9 @@ app/src/main/java/com/practiceboard/app/
 ├── widget/                  — виджет-доска (AppWidgetProvider + RemoteViewsService)
 └── ui/                      — экраны на Jetpack Compose
 ```
+
+---
+
+## 🖥️ RetroSkin (Windows)
+
+В этом же репозитории лежит отдельная программа для Windows 11: она делает интерфейс похожим на Windows 95 или Windows 7 и умеет всё вернуть обратно. Подробности и скачивание — в [RetroSkin/README.md](RetroSkin/README.md).

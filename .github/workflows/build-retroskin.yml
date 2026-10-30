@@ -1,0 +1,43 @@
+name: Build RetroSkin
+
+on:
+  push:
+    branches: [ "main", "master", "claude/**" ]
+    paths: [ "RetroSkin/**", ".github/workflows/build-retroskin.yml", "!RetroSkin/dist/**", "!**.md" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build RetroSkin.exe
+        run: dotnet build RetroSkin/RetroSkin.csproj -c Release
+
+      - name: Copy exe
+        run: cp RetroSkin/bin/Release/net48/RetroSkin.exe RetroSkin.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroSkin-exe
+          path: RetroSkin.exe
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: retroskin-${{ github.run_number }}
+          name: RetroSkin — сборка ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: false
+          files: RetroSkin.exe
+          body: |
+            RetroSkin для Windows 10/11: делает интерфейс похожим на Windows 95 или Windows 7.
+            Скачай RetroSkin.exe и запусти — установка не нужна (.NET Framework 4.8 уже есть в Windows).
