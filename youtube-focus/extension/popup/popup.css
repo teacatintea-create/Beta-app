@@ -1,0 +1,39 @@
+:root {
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #6b7280;
+  --card: #f3f4f6;
+  --accent: #3b82f6;
+  --ok: #16a34a;
+  --off: #dc2626;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111418; --fg: #e5e7eb; --muted: #9ca3af; --card: #1d232b; }
+}
+* { box-sizing: border-box; }
+body {
+  width: 320px; margin: 0; padding: 14px; background: var(--bg); color: var(--fg);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+h1 { font-size: 17px; margin: 0; flex: 1; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--card); }
+.pill.on { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+.pill.off { background: color-mix(in srgb, var(--off) 20%, transparent); color: var(--off); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stats div { background: var(--card); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; }
+.stats b { font-size: 16px; }
+.stats span { font-size: 11px; color: var(--muted); }
+.bar { height: 6px; border-radius: 3px; background: var(--card); margin: 8px 0 12px; overflow: hidden; }
+#bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.field { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent); background: var(--bg); color: var(--fg); }
+.hint { color: var(--muted); font-size: 12px; margin: 4px 0 10px; min-height: 1em; }
+.check { display: flex; gap: 8px; align-items: center; margin: 6px 0 12px; }
+.buttons { display: flex; gap: 8px; }
+button { flex: 1; font: inherit; padding: 8px; border: 0; border-radius: 8px; cursor: pointer; background: var(--card); color: var(--fg); }
+button.primary { background: var(--accent); color: #fff; }
+button:disabled { opacity: .55; cursor: default; }
+footer { margin-top: 8px; text-align: right; }
+a { color: var(--accent); text-decoration: none; }

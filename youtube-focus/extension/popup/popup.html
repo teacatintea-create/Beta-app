@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>FocusTube</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon32.png" alt="" width="24" height="24">
+    <h1>FocusTube</h1>
+    <span id="status" class="pill">…</span>
+  </header>
+
+  <section class="stats">
+    <div><b id="watched">0 мин</b><span id="limit">на YouTube сегодня</span></div>
+    <div><b id="hidden">0</b><span>роликов скрыто</span></div>
+    <div><b id="blocked">0</b><span>видео заблокировано</span></div>
+  </section>
+  <div class="bar"><div id="bar-fill"></div></div>
+
+  <label class="field">Режим фильтра
+    <select id="mode">
+      <option value="strict">Строгий</option>
+      <option value="balanced">Сбалансированный</option>
+      <option value="soft">Мягкий</option>
+    </select>
+  </label>
+  <p id="mode-hint" class="hint"></p>
+
+  <label class="check"><input type="checkbox" id="allowCreative"> Творчество тоже считается полезным</label>
+
+  <div class="buttons">
+    <button id="toggle"></button>
+    <button id="pause">Пауза на 15 минут</button>
+  </div>
+  <p id="countdown" class="hint"></p>
+
+  <footer><a href="#" id="options">Все настройки →</a></footer>
+  <script src="../src/defaults.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+/* FocusTube — стили, которые подключаются на страницах YouTube. */
+
+/* Скрытые и проверяемые карточки. */
+html.ft-active [data-ft-hidden] { display: none !important; }
+html.ft-active [data-ft-pending] { opacity: 0 !important; pointer-events: none !important; }
+
+/* Главная без ленты рекомендаций. */
+html.ft-hide-home.ft-on-home ytd-browse[page-subtype="home"] ytd-rich-grid-renderer,
+html.ft-hide-home.ft-on-home ytd-browse[page-subtype="home"] #chips-wrapper,
+html.ft-hide-home.ft-on-home ytm-browse ytm-rich-grid-renderer,
+html.ft-hide-home.ft-on-home ytm-browse ytm-section-list-renderer,
+html.ft-hide-home.ft-on-home ytm-browse ytm-feed-filter-chip-bar-renderer,
+html.ft-hide-home.ft-on-home ytm-browse ytm-chip-cloud-renderer {
+  display: none !important;
+}
+
+/* Shorts. */
+html.ft-hide-shorts ytd-reel-shelf-renderer,
+html.ft-hide-shorts ytd-rich-shelf-renderer[is-shorts],
+html.ft-hide-shorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.ft-hide-shorts ytd-rich-section-renderer:has(ytm-shorts-lockup-view-model),
+html.ft-hide-shorts ytd-item-section-renderer:has(> #contents > ytd-reel-shelf-renderer),
+html.ft-hide-shorts grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html.ft-hide-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html.ft-hide-shorts ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+html.ft-hide-shorts ytm-reel-shelf-renderer,
+html.ft-hide-shorts ytm-shorts-lockup-view-model,
+html.ft-hide-shorts ytm-shorts-lockup-view-model-v2,
+html.ft-hide-shorts ytm-rich-section-renderer:has(ytm-reel-shelf-renderer),
+html.ft-hide-shorts ytm-rich-section-renderer:has(ytm-shorts-lockup-view-model),
+html.ft-hide-shorts ytm-rich-section-renderer:has(ytm-shorts-lockup-view-model-v2),
+html.ft-hide-shorts ytm-pivot-bar-item-renderer:has(.pivot-shorts),
+html.ft-hide-shorts ytm-pivot-bar-item-renderer:has(a[href^="/shorts"]) {
+  display: none !important;
+}
+
+/* Комментарии. */
+html.ft-hide-comments ytd-comments,
+html.ft-hide-comments #comments,
+html.ft-hide-comments ytm-comment-section-renderer,
+html.ft-hide-comments ytm-comments-entry-point-header-renderer,
+html.ft-hide-comments ytm-item-section-renderer[section-identifier="comments-entry-point"] {
+  display: none !important;
+}
+
+/* Конечные заставки и подсказки «следующее видео» внутри плеера. */
+html.ft-hide-endscreen .ytp-ce-element,
+html.ft-hide-endscreen .ytp-endscreen-content,
+html.ft-hide-endscreen .ytp-fullscreen-grid,
+html.ft-hide-endscreen .ytp-videowall-still,
+html.ft-hide-endscreen .ytp-suggestion-set,
+html.ft-hide-endscreen .ytm-autonav-bar {
+  display: none !important;
+}

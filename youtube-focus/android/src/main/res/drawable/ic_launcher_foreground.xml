@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Кнопка «play» -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M46,36L46,72L74,54Z" />
+    <!-- Академическая шапочка -->
+    <path android:fillColor="#FFFACC15" android:pathData="M28,40L40,34L52,40L40,46Z" />
+    <path android:fillColor="#FFFACC15" android:pathData="M39.2,40h1.6v10h-1.6z" />
+</vector>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Настройки FocusTube</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+<main>
+  <header>
+    <img src="../icons/icon48.png" alt="" width="40" height="40">
+    <div>
+      <h1>FocusTube</h1>
+      <p class="muted">Оставляем на YouTube только научное, образовательное и творческое.</p>
+    </div>
+  </header>
+
+  <section>
+    <h2>Фильтр</h2>
+    <label class="field">Режим
+      <select id="mode">
+        <option value="strict">Строгий — только явно образовательное</option>
+        <option value="balanced">Сбалансированный — нужна хотя бы одна полезная примета</option>
+        <option value="soft">Мягкий — скрывать только явное развлекалово</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="allowCreative"> Творчество (рисование, музыка, 3D, рукоделие…) тоже считается полезным</label>
+    <label class="check"><input type="checkbox" id="blockWatchPage"> Проверять открытый ролик и закрывать его заставкой, если он не проходит фильтр</label>
+    <label class="check"><input type="checkbox" id="hideHomeFeed"> Убрать ленту рекомендаций с главной (вместо неё — поиск и ваши интересы)</label>
+    <label class="check"><input type="checkbox" id="hideShorts"> Скрыть Shorts</label>
+    <label class="check"><input type="checkbox" id="hideMixes"> Скрыть миксы и автоплейлисты</label>
+    <label class="check"><input type="checkbox" id="hideEndScreen"> Скрыть подсказки в конце видео</label>
+    <label class="check"><input type="checkbox" id="hideComments"> Скрыть комментарии</label>
+  </section>
+
+  <section>
+    <h2>Время</h2>
+    <div class="row">
+      <label class="field">Лимит в день, минут (0 — без лимита)
+        <input type="number" id="dailyLimitMin" min="0" max="1440" step="5">
+      </label>
+      <label class="field">Задержка перед отключением фильтра, секунд
+        <input type="number" id="lockDelaySec" min="0" max="300" step="5">
+      </label>
+    </div>
+    <p class="muted small">Задержка нужна, чтобы «на минутку выключить» было не так просто: за 20 секунд обычно успеваешь передумать.</p>
+  </section>
+
+  <section>
+    <h2>Мои интересы</h2>
+    <p class="muted small">По одному на строку. Появятся кнопками на главной и дают ролику +2 балла, если встречаются в названии.</p>
+    <textarea id="interests" rows="4"></textarea>
+  </section>
+
+  <section class="two">
+    <div>
+      <h2>Белый список каналов</h2>
+      <p class="muted small">Название канала или @handle, по одному на строку. Эти каналы показываются всегда.</p>
+      <textarea id="whitelistChannels" rows="6"></textarea>
+    </div>
+    <div>
+      <h2>Чёрный список каналов</h2>
+      <p class="muted small">Эти каналы скрываются всегда.</p>
+      <textarea id="blacklistChannels" rows="6"></textarea>
+    </div>
+    <div>
+      <h2>Разрешённые слова</h2>
+      <p class="muted small">+3 балла, если слово есть в названии.</p>
+      <textarea id="extraAllowKeywords" rows="4"></textarea>
+    </div>
+    <div>
+      <h2>Запрещённые слова</h2>
+      <p class="muted small">−5 баллов, если слово есть в названии.</p>
+      <textarea id="extraBlockKeywords" rows="4"></textarea>
+    </div>
+  </section>
+
+  <section>
+    <h2>Категории YouTube (необязательно)</h2>
+    <p class="muted small">
+      Без ключа FocusTube смотрит на названия, каналы, а у открытого ролика — ещё и на категорию, теги и описание.
+      С ключом YouTube Data API v3 категория и теги проверяются и у роликов в ленте — фильтр становится заметно точнее.
+      Ключ бесплатный: Google Cloud Console → «APIs &amp; Services» → включить «YouTube Data API v3» → «Credentials» → «Create API key».
+      Ключ хранится только в вашем браузере.
+    </p>
+    <label class="field">API-ключ
+      <input type="text" id="apiKey" placeholder="AIza…" autocomplete="off" spellcheck="false">
+    </label>
+    <p class="muted small">Полезные категории:</p>
+    <div id="categories" class="cats"></div>
+  </section>
+
+  <div class="actions">
+    <button id="save" class="primary">Сохранить</button>
+    <button id="reset">Сбросить к стандартным</button>
+    <span id="saved" class="muted"></span>
+  </div>
+
+  <section>
+    <h2>Проверить ролик</h2>
+    <p class="muted small">Впишите название и канал — увидите, как FocusTube оценит ролик с текущими (сохранёнными) настройками.</p>
+    <div class="row">
+      <label class="field">Название <input type="text" id="testTitle" placeholder="Как работает трансформатор — объяснение"></label>
+      <label class="field">Канал <input type="text" id="testChannel" placeholder="Физика на пальцах"></label>
+    </div>
+    <div id="testResult" class="result"></div>
+  </section>
+</main>
+<script src="../src/defaults.js"></script>
+<script src="../src/classifier.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

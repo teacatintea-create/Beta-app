@@ -26,12 +26,27 @@ jobs:
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk PracticeBoard.apk
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk PracticeBoard.apk
+          cp youtube-focus/android/build/outputs/apk/release/focustube-release.apk FocusTube.apk
+
+      - name: Test FocusTube filter
+        run: node --test youtube-focus/extension/test/*.test.js
+
+      - name: Pack FocusTube browser extension
+        run: cd youtube-focus/extension && zip -r ../../FocusTube-extension.zip manifest.json src popup options icons
 
       - uses: actions/upload-artifact@v4
         with:
           name: PracticeBoard-apk
           path: PracticeBoard.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FocusTube
+          path: |
+            FocusTube.apk
+            FocusTube-extension.zip
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -40,7 +55,12 @@ jobs:
           name: Доска практики — сборка ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          files: PracticeBoard.apk
+          files: |
+            PracticeBoard.apk
+            FocusTube.apk
+            FocusTube-extension.zip
           body: |
-            APK приложения «Доска практики» (Android 8.0+).
-            Скачай PracticeBoard.apk на телефон и установи (разреши установку из неизвестных источников).
+            PracticeBoard.apk — приложение «Доска практики» (Android 8.0+).
+            FocusTube.apk — YouTube только с полезным контентом (Android 8.0+).
+            FocusTube-extension.zip — расширение FocusTube для браузера на ПК (Chrome, Edge, Яндекс, Opera, Firefox).
+            APK скачай на телефон и установи (разреши установку из неизвестных источников).
