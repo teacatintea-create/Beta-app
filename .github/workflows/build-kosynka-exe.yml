@@ -32,8 +32,12 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: |
-          if [ -z "$UNITY_LICENSE" ] || [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then
-            echo "::warning::Нет секретов UNITY_LICENSE, UNITY_EMAIL и UNITY_PASSWORD, сборка .exe пропущена. Как их добавить, написано в kosynka-unity/README.md."
+          missing=""
+          [ -n "$UNITY_LICENSE" ] || missing="$missing UNITY_LICENSE"
+          [ -n "$UNITY_EMAIL" ] || missing="$missing UNITY_EMAIL"
+          [ -n "$UNITY_PASSWORD" ] || missing="$missing UNITY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::warning::Не хватает секретов:$missing. Сборка .exe пропущена. Как их добавить, написано в kosynka-unity/README.md."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
